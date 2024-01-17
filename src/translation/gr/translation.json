@@ -1,0 +1,98 @@
+{
+  "user-exists": "L'utilisateur existe déjà",
+  "user-not-exists": "L'utilisateur n'existe pas",
+
+  "registration-exists": "L'utilisateur est déjà enregistré",
+  "registration-success": "L'utilisateur est enregistré avec succès, veuillez vérifier votre email pour le code OTP",
+  "registration-failed": "L'enregistrement de l'utilisateur a échoué, veuillez réessayer plus tard",
+
+  "invalid-otp": "Le code OTP est invalide, veuillez réessayer",
+  "otp-exists": "Le code OTP a déjà été envoyé à l'email",
+  "otp-sent": "Le code OTP a été envoyé à votre email, veuillez vérifier l'email",
+  "otp-expired": "Le code OTP a expiré, veuillez réessayer",
+  "otp-verified": "Le code OTP a été vérifié avec succès",
+
+  "password-reset-success": "Réinitialisation du mot de passe réussie",
+
+  "user-verified": "L'inscription de l'utilisateur est réussie",
+  "user-reregistered": "L'utilisateur est déjà enregistré, veuillez ajouter un code d'accès",
+  "forget-password-success": "Le mot de passe est réinitialisé avec succès, veuillez vérifier votre email pour le nouveau mot de passe",
+  "forget-password-error": "Le code OTP ne peut pas être envoyé maintenant, veuillez réessayer plus tard",
+  "forget-password-failed": "Quelque chose s'est mal passé, veuillez réessayer plus tard",
+  "forget-password-sent": "Le code OTP de réinitialisation du mot de passe a été envoyé à votre email, veuillez vérifier",
+
+  "login-credentials-required": "Email et mot de passe sont requis",
+  "login-success": "L'utilisateur s'est connecté avec succès",
+  "login-failed": "L'email ou le mot de passe est incorrect, veuillez réessayer plus tard",
+  "server-error": "Erreur du serveur, veuillez réessayer plus tard",
+
+  "unauthorised": "Vous n'êtes pas autorisé",
+  "validation-error": "Erreur de validation du formulaire",
+  "name-required": "Le nom est requis",
+  "email-format-error": "Le format de l'email est invalide",
+  "phoneNumber-required": "Le numéro de téléphone est requis",
+  "password-format-error": "Le format du mot de passe est invalide, il doit contenir au moins 8 caractères, y compris des chiffres et des lettres",
+  "role-required": "Le rôle est requis",
+  "otp-verification-success": "Le code OTP a été vérifié avec succès",
+  "otp-verification-failed": "La vérification du code OTP a échoué, veuillez réessayer plus tard",
+  "user-list": "Liste des utilisateurs récupérée avec succès",
+  "user-details": "Détails de l'utilisateur récupérés avec succès",
+  "exception-in-authorization": "Le système ne peut pas autoriser l'utilisateur, veuillez réessayer plus tard",
+
+  "worker-added": "Travailleur ajouté avec succès",
+  "worker-not-added": "Travailleur non ajouté, veuillez réessayer plus tard",
+  "worker-list": "Liste des travailleurs récupérée avec succès",
+
+  "transaction-added": "Transaction ajoutée avec succès",
+  "transaction-list": "Liste des transactions récupérée avec succès",
+  "transaction-details": "Détails de la transaction récupérés avec succès",
+  "transaction-not-found": "Transaction non trouvée, veuillez réessayer avec un numéro valide",
+
+  "personalDataPolicy-added": "Politique de données personnelles ajoutée avec succès",
+  "personalDataPolicys": "Politique de données personnelles récupérée avec succès",
+
+  "refundAndCancellationPolicys": "Politique de remboursement et d'annulation récupérée avec succès",
+  "refundAndCancellationPolicy-added": "Politique de remboursement et d'annulation ajoutée avec succès",
+
+  "termsOfMoneyTransfers": "Conditions de transfert d'argent récupérées avec succès",
+  "termsOfMoneyTransfer-added": "Conditions de transfert d'argent ajoutées avec succès",
+
+  "termsOfServices": "Conditions de services récupérées avec succès",
+  "termsOfService-added": "Conditions de service ajoutées avec succès",
+
+  "invalid-token": "Jeton invalide, réessayez avec un jeton valide",
+  "passcode-added": "Code d'accès ajouté avec succès",
+  "passcode-verfied": "Code d'accès vérifié avec succès",
+  "passcode-already-exists": "Le code d'accès est déjà défini dans votre compte",
+
+  "transaction-chart": "Graphique des transactions récupéré avec succès",
+  "transaction-counts": "Nombre de transactions récupéré avec succès",
+  "password-changed": "Mot de passe changé avec succès",
+
+  "user-already-blocked": "L'utilisateur est déjà bloqué",
+  "user-blocked": "L'utilisateur est bloqué avec succès",
+  "user-not-blocked": "L'utilisateur n'est pas bloqué, veuillez réessayer plus tard",
+  "user-already-unblocked": "L'utilisateur est déjà débloqué",
+  "user-unblocked": "L'utilisateur est débloqué avec succès",
+  "user-not-unblocked": "L'utilisateur n'est pas débloqué, veuillez réessayer plus tard",
+
+  "notification-list": "Liste des notifications récupérée avec succès",
+
+  "isActive-invalid-type": "Actif doit être une valeur booléenne, true ou false",
+  "percentage-invalid-range": "Le pourcentage doit être un nombre avec une plage entre 0 et 100",
+
+  "bankName-required": "Le nom de la banque est requis",
+
+  "content-required": "Le contenu est requis",
+
+  "paymentMethod-required": "La méthode de paiement est requise",
+  "hiddenFees-format-error": "Les frais cachés doivent être un nombre entre 0 et 100",
+  "exchangeRate-format-error": "Le taux de change doit être un nombre supérieur à 0",
+  "amountToReceiveCurrency-required": "Le montant à recevoir en devise est requis",
+  "amountToReceive-format-error": "Le montant à recevoir doit être un nombre supérieur à 0",
+  "ammountToSentCurrency-required": "Le montant à envoyer en devise est requis",
+  "amountToSent-format-error": "Le montant à envoyer doit être un nombre supérieur à 0",
+  "lastName-required": "Le nom de famille est requis",
+  "firstName-required": "Le prénom est requis",
+  "user-updated":"Profil utilisateur mis à jour avec succès"
+}
