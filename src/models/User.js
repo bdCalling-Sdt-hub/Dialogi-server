@@ -17,16 +17,15 @@ const userSchema = new mongoose.Schema({
     }
   },
   password: { type: String, required: false, set: (v) => bcrypt.hashSync(v, bcrypt.genSaltSync(10)) },
+  address: { type: String, required: false },
+  dateOfBirth: { type: Date, required: false },
   image: {
     type: Object, required: false, default: {
       publicFileUrl: `${process.env.IMAGE_UPLOAD_BACKEND_DOMAIN}/uploads/users/user.png`,
       path: 'public\\uploads\\users\\user.png'
     }
   },
-  role: { type: String, enum: ['user', 'admin'], default: 'user' },
-  isBlocked: { type: Boolean, default: false },
-  address: { type: String, required: false },
-  dateOfBirth: { type: Date, required: false },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' }
 }, { timestamps: true }, {
   toJSON: {
     transform(doc, ret) {

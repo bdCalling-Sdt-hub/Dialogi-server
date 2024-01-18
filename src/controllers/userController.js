@@ -5,11 +5,10 @@ require('dotenv').config();
 //defining unlinking image function 
 const unlinkImages = require('../common/image/unlinkImage')
 const logger = require("../helpers/logger");
-const { addUser, login, getUserByEmail, getAllUsers, getUserById, updateUser, loginWithPasscode } = require('../services/userService')
-const { sendOTP, checkOTPByEmail, verifyOTP, checkOTPValidity, updateOTP } = require('../services/otpService');
+const { addUser, login, getUserByEmail, getAllUsers, getUserById, updateUser } = require('../services/userService')
+const { sendOTP, checkOTPByEmail, verifyOTP } = require('../services/otpService');
 const { addNotification } = require('../services/notificationService');
 const { addToken, verifyToken, deleteToken } = require('../services/tokenService');
-const emailWithNodemailer = require('../helpers/email');
 const crypto = require('crypto');
 
 function validatePassword(password) {
@@ -24,7 +23,7 @@ const signUp = async (req, res) => {
   try {
     var otpPurpose = 'email-verification';
     var existingUser = false;
-    if(req.body.existingUser){
+    if (req.body.existingUser) {
       existingUser = true;
       otpPurpose = 'passcode-verification';
     }
@@ -52,12 +51,12 @@ const signUp = async (req, res) => {
       var passcodeToken;
       var registeredUser;
       var message
-      if(existingUser){
+      if (existingUser) {
         registeredUser = req.body.existingUser;
         passcodeToken = crypto.randomBytes(32).toString('hex');
         message = req.t('user-reregistered');
       }
-      else{
+      else {
         const userData = {
           fullName: fullName,
           email: email,
@@ -65,7 +64,7 @@ const signUp = async (req, res) => {
           password: password,
           role: "user",
         }
-        if(country){
+        if (country) {
           userData.country = country;
         }
         registeredUser = await addUser(userData);
@@ -110,21 +109,10 @@ const signIn = async (req, res) => {
     if (user) {
       var token;
       var refreshToken;
-      var passcodeToken;
-      if (user.role === 'user') {
-        passcodeToken = crypto.randomBytes(32).toString('hex');
-        const data = {
-          token: passcodeToken,
-          userId: user._id,
-          purpose: 'passcode-verification',
-        }
-        await addToken(data);
-      }
-      else {
-        token = jwt.sign({ _id: user._id, email: user.email, role: user.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
-        refreshToken = jwt.sign({ _id: user._id, email: user.email, role: user.role }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
-      }
-      
+
+      token = jwt.sign({ _id: user._id, email: user.email, role: user.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+      refreshToken = jwt.sign({ _id: user._id, email: user.email, role: user.role }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
+
       return res.status(200).json(response({ statusCode: 200, message: req.t('login-success'), status: "OK", type: "user", data: user, accessToken: token, refreshToken: refreshToken, passcodeToken: passcodeToken }));
     }
     return res.status(401).json(response({ statusCode: 200, message: req.t('login-failed'), status: "OK" }));
@@ -188,7 +176,7 @@ const verifyForgetPasswordOTP = async (req, res) => {
       userId: user._id,
       purpose: 'forget-password'
     }
-    await addToken(data); 
+    await addToken(data);
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('otp-verified'), forgetPasswordToken: token }));
   }
   catch (error) {
@@ -204,12 +192,12 @@ const resetPassword = async (req, res) => {
     if (req.headers['forget-password'] && req.headers['forget-password'].startsWith('Forget-password ')) {
       forgetPasswordToken = req.headers['forget-password'].split(' ')[1];
     }
-    if(!forgetPasswordToken){
+    if (!forgetPasswordToken) {
       return res.status(401).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('unauthorised') }));
     }
 
     const tokenData = await verifyToken(forgetPasswordToken, 'forget-password');
-    if(!tokenData){
+    if (!tokenData) {
       return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('invalid-token') }));
     }
     const { email, password } = req.body;
@@ -233,71 +221,12 @@ const resetPassword = async (req, res) => {
   }
 }
 
-const addWorker = async (req, res) => {
-  try {
-    const { fullName, email, phoneNumber, country } = req.body;
-    if (req.body.userRole !== 'admin') {
-      return res.status(401).json(response({ statusCode: 401, message: req.t('unauthorised'), status: "Error" }));
-    }
-    const existingUser = await getUserByEmail(email);
-    if (existingUser) {
-      return res.status(409).json(response({ status: 'Error', statusCode: '409', type: 'user', message: req.t('user-exists') }));
-    }
-    const length = 8;
-    // Generate a random password
-    const password = crypto.randomBytes(length).toString('hex').slice(0, length);
-    const user = {
-      fullName,
-      email,
-      phoneNumber,
-      password,
-      role: "worker"
-    };
-    if(country){
-      user.country = country;
-    }
-    const userSaved = await addUser(user);
-    if (userSaved) {
-
-      const subject = 'Worker login credentials for Russend';
-      const url = process.env.DASHBOARD_LINK;
-      const emailData = {
-        email: email,
-        subject: subject,
-        html: `
-        <h3>Welcome ${fullName} to Russend as Co-Worker</h3>
-        <p><b>Your login credentials:</b></p>
-        <hr>
-        <table>
-          <tr>
-            <th align="left">Email:</th>
-            <td>${email}</td>
-          </tr>
-          <tr>
-            <th align="left">Password:</th>
-            <td>${password}</td>
-          </tr>
-        </table>
-        <p>To login, <a href=${url}>Click here</a></p>`
-      }
-      await emailWithNodemailer(emailData);
-      return res.status(200).json(response({ status: 'OK', statusCode: '201', type: 'user', message: req.t('worker-added'), data: userSaved }));
-    }
-    return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('worker-not-added') }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: 200, message: req.t('server-error'), status: "Error" }));
-  }
-}
-
 const getUsers = async (req, res) => {
   try {
     if (req.body.userRole !== 'admin') {
       return res.status(401).json(response({ statusCode: 401, message: req.t('unauthorised'), status: "Error" }));
     }
-    
+
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const filter = {
@@ -305,7 +234,7 @@ const getUsers = async (req, res) => {
     };
     const search = req.query.search;
     const searchRegExp = new RegExp('.*' + search + '.*', 'i');
-    if(search){
+    if (search) {
       filter.$or = [
         { fullName: searchRegExp },
         { email: searchRegExp },
@@ -315,36 +244,6 @@ const getUsers = async (req, res) => {
     const options = { page, limit };
     const { userList, pagination } = await getAllUsers(filter, options);
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-list'), data: { userList, pagination } }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: 200, message: req.t('server-error'), status: "Error" }));
-  }
-}
-
-const getWorkers = async (req, res) => {
-  try {
-    if (req.body.userRole !== 'admin') {
-      return res.status(401).json(response({ statusCode: 401, message: req.t('unauthorised'), status: "Error" }));
-    }
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
-    const filter = {
-      role: 'worker'
-    };
-    const search = req.query.search;
-    const searchRegExp = new RegExp('.*' + search + '.*', 'i');
-    if(search){
-      filter.$or = [
-        { fullName: searchRegExp },
-        { email: searchRegExp },
-        { phoneNumber: searchRegExp },
-      ]
-    }
-    const options = { page, limit };
-    const { userList, pagination } = await getAllUsers(filter, options);
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('worker-list'), data: { userList, pagination } }));
   }
   catch (error) {
     console.error(error);
@@ -363,62 +262,6 @@ const userDetails = async (req, res) => {
     console.error(error);
     logger.error(error, req.originalUrl)
     return res.status(500).json(response({ statusCode: 200, message: req.t('server-error'), status: "Error" }));
-  }
-}
-
-const addPasscode = async (req, res) => {
-  try {
-    var token
-    if (req.headers['pass-code'] && req.headers['pass-code'].startsWith('Pass-code ')) {
-      token = req.headers['pass-code'].split(' ')[1];
-    }
-    const tokenData = await verifyToken(token, 'passcode-verification');
-    if (!tokenData) {
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('invalid-token') }));
-    }
-    const clientId = req.body.clientId;
-    const passcode = req.body.passcode;
-    const userData = await getUserById(clientId);
-    if (!userData) {
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
-    }
-    if (userData.role !== 'user') {
-      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('unauthorised') }));
-    }
-    userData.passcode = passcode;
-    await userData.save();
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-added'), data: userData }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: 200, message: req.t('server-error'), status: "Error" }));
-  }
-
-}
-
-const verifyPasscode = async (req, res) => {
-  try {
-    var token
-    if (req.headers['pass-code'] && req.headers['pass-code'].startsWith('Pass-code ')) {
-      token = req.headers['pass-code'].split(' ')[1];
-    }
-    const tokenData = await verifyToken(token, 'passcode-verification');
-    if (!tokenData) {
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('invalid-token') }));
-    }
-    const { passcode } = req.body;
-    console.log(tokenData.userId.email, passcode);
-    const user = await loginWithPasscode(tokenData.userId.email, passcode);
-    const accessToken = jwt.sign({ _id: tokenData.userId._id, email: tokenData.userId.email, role: tokenData.userId.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '30d' });
-    const refreshToken = jwt.sign({ _id: user._id, email: user.email, role: user.role }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
-    await deleteToken(tokenData._id);
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-verfied'), accessToken: accessToken, refreshToken: refreshToken }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: 200, message: req.t(error.message), status: "OK" }));
   }
 }
 
@@ -500,19 +343,9 @@ const changePassword = async (req, res) => {
   }
 }
 
-const signInWithPasscode = async (req, res) => {
-  try{
-    const { email, passcode } = req.body;
-    if (!email || !passcode) {
-      return res.status(400).json(response({ statusCode: 200, message: req.t('login-credentials-required'), status: "OK" }));
-    }
-
-    const user = await loginWithPasscode(email, passcode);
-    if(user.role !== 'user'){
-      return res.status(401).json(response({ statusCode: 401, message: req.t('unauthorised'), status: "Error" }));
-    }
-    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '30d' });
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, token: accessToken }));
+const signInWithProvider = async (req, res) => {
+  try {
+    //under development
   }
   catch (error) {
     console.error(error);
@@ -522,16 +355,16 @@ const signInWithPasscode = async (req, res) => {
 }
 
 const updateProfile = async (req, res) => {
-  try{
+  try {
     const { fullName, phoneNumber } = req.body;
     const user = await getUserById(req.body.userId);
-    if(!user){
+    if (!user) {
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
     }
-    user.fullName = !fullName?user.fullName:fullName;
-    user.phoneNumber = !phoneNumber?user.phoneNumber:phoneNumber;
-    if(req.file){
-      if(user.image.path!=='public\\uploads\\users\\user.png'){
+    user.fullName = !fullName ? user.fullName : fullName;
+    user.phoneNumber = !phoneNumber ? user.phoneNumber : phoneNumber;
+    if (req.file) {
+      if (user.image.path !== 'public\\uploads\\users\\user.png') {
         unlinkImages(user.image.path);
       }
       user.image.publicFileUrl = `${process.env.IMAGE_UPLOAD_BACKEND_DOMAIN}/uploads/users/${req.file.filename}`;
@@ -540,11 +373,11 @@ const updateProfile = async (req, res) => {
     await user.save();
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-updated'), data: user }));
   }
-  catch(error){
+  catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
     return res.status(500).json(response({ statusCode: 500, message: req.t('server-error'), status: "Error" }));
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile }
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, getUsers, userDetails, resetPassword, blockUser, unBlockUser, changePassword, signInWithProvider, signInWithRefreshToken, updateProfile }

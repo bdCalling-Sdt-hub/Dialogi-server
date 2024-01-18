@@ -11,5 +11,4 @@ router.get('/:id', isValidUser, getTransactionById);
 router.get('/', isValidUser, getAllTransactions);
 router.put('/:id', isValidUser, updateTransaction);
 
-
 module.exports = router;

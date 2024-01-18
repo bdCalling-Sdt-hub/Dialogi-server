@@ -50,17 +50,8 @@ const updateUser = async (userId,userbody) => {
   }
 }
 
-const loginWithPasscode = async (email, passcode) => {
-  const user = await User.findOne({ email });
-  if (!user) {
-    return null;
-  }
-  console.log(passcode, user);
-  const isMatch = await bcrypt.compare(passcode, user.passcode);
-  if (!isMatch) {
-    return null;
-  }
-  return user;
+const loginWithProvide = async (email, provider) => {
+  //under development
 }
 
 module.exports = {
@@ -69,6 +60,5 @@ module.exports = {
   getUserById,
   updateUser,
   getUserByEmail,
-  getAllUsers,
-  loginWithPasscode
+  getAllUsers
 }
