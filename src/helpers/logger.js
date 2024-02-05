@@ -2,6 +2,9 @@ const fs = require('fs');
 const path = require('path');
 
 const logFilePath = path.join(__dirname, '../../app.log');
+if (!fs.existsSync(logFilePath)) {
+  fs.writeFileSync(logFilePath, '');
+}
 
 function logMessage(level, message, errorPath) {
   const logEntry = `${new Date().toISOString()} [${level}] ${

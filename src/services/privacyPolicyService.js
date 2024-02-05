@@ -2,7 +2,7 @@ const PrivacyPolicy = require('../models/PrivacyPolicy');
 
 const addPrivacyPolicy = async (privacyPolicyBody) => {
   try {
-    var privacyPolicy = await findPrivacyPolicy(privacyPolicyBody);
+    var privacyPolicy = await findPrivacyPolicy();
     if (privacyPolicy) {
       privacyPolicy.content = privacyPolicyBody.content;
     }
@@ -18,7 +18,7 @@ const addPrivacyPolicy = async (privacyPolicyBody) => {
 
 const findPrivacyPolicy = async (privacyPolicyBody) => {
   try {
-    const privacyPolicy = await PrivacyPolicy.findOne({content: privacyPolicyBody.content});
+    const privacyPolicy = await PrivacyPolicy.findOne();
     return privacyPolicy;
   } catch (error) {
     throw error;

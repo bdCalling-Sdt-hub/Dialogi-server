@@ -2,7 +2,11 @@ const Category = require('../models/Category');
 
 const addCategory = async (categoryBody) => {
   try {
-    const category = new Category(categoryBody);
+    var category = await getCategoryByName(categoryBody.name);
+    if(category){
+      return null;
+    }
+    category = new Category(categoryBody);
     await category.save();
     return category;
   } catch (error) {
@@ -19,7 +23,8 @@ const getCategoryByName = async (name) => {
 }
 
 const getAllCategorys = async (filter, options) => {
-  const {page=1, limit=10} = options;
+  const page = Number(options.page) || 1;
+  const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
   const categoryList = await Category.find({...filter}).skip(skip).limit(limit).sort({createdAt: -1});
   const totalResults = await Category.countDocuments({...filter});

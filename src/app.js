@@ -5,6 +5,7 @@ const aboutUsRouter = require('./routes/aboutUsRouter');
 const faqRouter = require('./routes/faqRouter');
 const privacyPolicyRouter = require('./routes/privacyPolicyRouter');
 const supportRouter = require('./routes/supportRouter');
+const categoryRouter = require('./routes/categoryRouter');
 
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 const mongoose = require('mongoose');
@@ -67,6 +68,7 @@ app.use('/api/about-us', aboutUsRouter);
 app.use('/api/faqs', faqRouter);
 app.use('/api/privacy-policies', privacyPolicyRouter);
 app.use('/api/supports', supportRouter);
+app.use('/api/categories', categoryRouter);
 
 //testing API is alive
 app.get('/test', (req, res) => {

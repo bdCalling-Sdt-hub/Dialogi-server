@@ -2,7 +2,7 @@ const AboutUs = require('../models/AboutUs');
 
 const addAboutUs = async (aboutUsBody) => {
   try {
-    var aboutUs = await findAboutUs(aboutUsBody);
+    var aboutUs = await findAboutUs();
     if (aboutUs) {
       aboutUs.content = aboutUsBody.content;
     }
@@ -16,9 +16,9 @@ const addAboutUs = async (aboutUsBody) => {
   }
 }
 
-const findAboutUs = async (aboutUsBody) => {
+const findAboutUs = async () => {
   try {
-    const aboutUs = await AboutUs.findOne({content: aboutUsBody.content});
+    const aboutUs = await AboutUs.findOne();
     return aboutUs;
   } catch (error) {
     throw error;

@@ -8,6 +8,7 @@ const UPLOADS_FOLDER_USERS = "./public/uploads/users";
 const uploadUsers = userFileUploadMiddleware(UPLOADS_FOLDER_USERS);
 const { isValidUser, verifyRefreshToken } = require('../middlewares/auth')
 const  validationMiddleware = require('../middlewares/user/signupValidation');
+const convertHeicToPng = require('../middlewares/converter');
 
 if (!fs.existsSync(UPLOADS_FOLDER_USERS)) {
   // If not, create the folder
@@ -23,7 +24,7 @@ if (!fs.existsSync(UPLOADS_FOLDER_USERS)) {
 }
 
 //Sign-up user
-router.post('/sign-up',  validationMiddleware, signUp);
+router.post('/sign-up', [uploadUsers.single("image")], convertHeicToPng(UPLOADS_FOLDER_USERS), validationMiddleware, signUp);
 router.post('/sign-in', signIn);
 router.get('/sign-in-with-refresh-token', verifyRefreshToken, signInWithRefreshToken);
 router.post('/forget-password', forgetPassword);

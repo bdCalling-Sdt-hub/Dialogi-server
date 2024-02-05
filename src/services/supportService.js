@@ -2,7 +2,7 @@ const Support = require('../models/Support');
 
 const addSupport = async (supportBody) => {
   try {
-    var support = await findSupport(supportBody);
+    var support = await findSupport();
     if (support) {
       support.content = supportBody.content;
     }
@@ -18,7 +18,7 @@ const addSupport = async (supportBody) => {
 
 const findSupport = async (supportBody) => {
   try {
-    const support = await Support.findOne({content: supportBody.content});
+    const support = await Support.findOne();
     return support;
   } catch (error) {
     throw error;

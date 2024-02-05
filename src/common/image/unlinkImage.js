@@ -1,6 +1,6 @@
 const fs = require("fs");
 
-function unlinkImages(imagePaths) {
+function unlinkImage(imagePaths) {
   if (typeof imagePaths === "string") {
     // If it's a single image path, convert it to an array
     imagePaths = [imagePaths];
@@ -17,4 +17,4 @@ function unlinkImages(imagePaths) {
   });
 }
 
-module.exports = unlinkImages
+module.exports = unlinkImage
