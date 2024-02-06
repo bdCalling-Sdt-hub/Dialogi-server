@@ -6,7 +6,7 @@ const { addFaq, getFaqs } = require('../services/faqService');
 const upgradeFaq = async (req, res) => {
   try{
     if(req.body.userRole!=='admin'){
-      res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'faq', message: req.t('unauthorised') }));
+      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'faq', message: req.t('unauthorised') }));
     }
     const faq = await addFaq(req.body);
     return res.status(201).json(response({ status: 'Success', statusCode: '201', type: 'faq', message: req.t('faq-added'), data: faq }));

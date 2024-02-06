@@ -6,7 +6,7 @@ const { addCategory, getAllCategorys, updateCategory, getCategoryByName, getCate
 const addNewCategory = async (req, res) => {
   try{
     if(req.body.userRole!=='admin'){
-      res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'category', message: req.t('unauthorised') }));
+      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'category', message: req.t('unauthorised') }));
     }
     const existingCategory = await getCategoryByName(req.body.name);
     if(existingCategory){

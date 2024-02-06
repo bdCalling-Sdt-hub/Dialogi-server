@@ -19,9 +19,10 @@ const getQuestionByQuestionAndSubCategory = async (question, subCategory) => {
 }
 
 const getAllQuestions = async (filter, options) => {
-  const {page=1, limit=10} = options;
+  const page = Number(options.page) || 1;
+  const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
-  const questionList = await Question.find({...filter}).skip(skip).limit(limit).sort({createdAt: -1}).populate('category', 'name');
+  const questionList = await Question.find({...filter}).skip(skip).limit(limit).sort({createdAt: -1});
   const totalResults = await Question.countDocuments({...filter});
   const totalPages = Math.ceil(totalResults / limit);
   const pagination = {totalResults, totalPages, currentPage: page, limit};

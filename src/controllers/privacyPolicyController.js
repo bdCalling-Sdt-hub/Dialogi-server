@@ -6,7 +6,7 @@ const { addPrivacyPolicy, getPrivacyPolicys } = require('../services/privacyPoli
 const upgradePrivacyPolicy = async (req, res) => {
   try{
     if(req.body.userRole!=='admin'){
-      res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'privacyPolicy', message: req.t('unauthorised') }));
+      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'privacyPolicy', message: req.t('unauthorised') }));
     }
     const privacyPolicy = await addPrivacyPolicy(req.body);
     return res.status(201).json(response({ status: 'Success', statusCode: '201', type: 'privacyPolicy', message: req.t('privacyPolicy-added'), data: privacyPolicy }));

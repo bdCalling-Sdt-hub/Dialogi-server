@@ -6,7 +6,7 @@ const { addAboutUs, getAboutUs } = require('../services/aboutUsService');
 const upgradeAboutUs = async (req, res) => {
   try{
     if(req.body.userRole!=='admin'){
-      res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'aboutUs', message: req.t('unauthorised') }));
+      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'aboutUs', message: req.t('unauthorised') }));
     }
     const aboutUs = await addAboutUs(req.body);
     return res.status(201).json(response({ status: 'Success', statusCode: '201', type: 'aboutUs', message: req.t('aboutUs-added'), data: aboutUs }));

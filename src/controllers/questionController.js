@@ -6,7 +6,7 @@ const { addQuestion, getAllQuestions, updateQuestion, getQuestionByQuestionAndSu
 const addNewQuestion = async (req, res) => {
   try{
     if(req.body.userRole!=='admin'){
-      res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'question', message: req.t('unauthorised') }));
+      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'question', message: req.t('unauthorised') }));
     }
     const existingQuestion = await getQuestionByQuestionAndSubCategory(req.body.question, req.body.subCategory);
     if(existingQuestion){
@@ -24,7 +24,10 @@ const addNewQuestion = async (req, res) => {
 
 const allQuestions = async (req, res) => {
   try{
-    const questions = await getAllQuestions();
+    const { page, limit } = req.query;
+    const options = { page, limit };
+    const filter = {};
+    const questions = await getAllQuestions(filter, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('questions'), data: questions }));
   }
   catch(error){
