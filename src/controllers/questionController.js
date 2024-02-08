@@ -1,7 +1,7 @@
 require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
-const { addQuestion, getAllQuestions, updateQuestion, getQuestionByQuestionAndSubCategory, getQuestionById, deleteQuestion } = require('../services/questionService');
+const { addQuestion, getAllQuestions, updateQuestion, getQuestionByQuestionAndSubCategory, getQuestionById, deleteQuestion, getAllSubCategories } = require('../services/questionService');
 
 const addNewQuestion = async (req, res) => {
   try{
@@ -26,7 +26,9 @@ const allQuestions = async (req, res) => {
   try{
     const { page, limit } = req.query;
     const options = { page, limit };
-    const filter = {};
+    const filter = {
+      subCategory: req.params.subCategory,
+    };
     const questions = await getAllQuestions(filter, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('questions'), data: questions }));
   }
@@ -84,4 +86,22 @@ const getQuestionDetails = async (req, res) => {
   }
 }
 
-module.exports = { addNewQuestion, allQuestions, updateQuestionById, deleteQuestionById, getQuestionDetails }
+const getSubCategory = async (req, res) => {
+  try{
+    const { page, limit } = req.query;
+    const options = { page, limit };
+    const filter = { category: req.params.id };
+    const category = await getAllSubCategories(filter, options);
+    if(!category){
+      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'category', message: req.t('category-not-found') }));
+    }
+    return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'category', message: req.t('category-details'), data: category }));
+  }
+  catch(error){
+    console.error(error);
+    logger.error(error.message, req.originalUrl);
+    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'category', message: req.t('server-error') }));
+  }
+}
+
+module.exports = { addNewQuestion, allQuestions, updateQuestionById, deleteQuestionById, getQuestionDetails, getSubCategory }

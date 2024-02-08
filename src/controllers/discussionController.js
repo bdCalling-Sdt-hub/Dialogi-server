@@ -1,7 +1,7 @@
 require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
-const { addDiscussion, getAllDiscussions, updateDiscussion, getDiscussionById, deleteDiscussion, addReply, getAllReplies } = require('../services/discussionService');
+const { addDiscussion, getAllDiscussions, updateDiscussion, getDiscussionById, deleteDiscussion, addReply, getAllReplies, getDiscussionWithReplies } = require('../services/discussionService');
 
 const addNewDiscussion = async (req, res) => {
   try{
@@ -99,10 +99,10 @@ const deleteDiscussionById = async (req, res) => {
 
 const getDiscussionDetails = async (req, res) => {
   try{
-    const discussion = await getDiscussionById(req.params.id);
-    if(!discussion){
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'discussion', message: req.t('discussion-not-found') }));
-    }
+    const {page, limit} = req.query;
+    const options = { page, limit };
+
+    const discussion = await getDiscussionWithReplies(req.params.id, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'discussion', message: req.t('discussion-details'), data: discussion }));
   }
   catch(error){

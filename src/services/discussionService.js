@@ -1,5 +1,7 @@
 const Discussion = require('../models/Discussion');
 const Reply = require('../models/Reply');
+const { ObjectId } = require('mongodb');
+
 
 const addDiscussion = async (discussionBody) => {
   try {
@@ -11,15 +13,7 @@ const addDiscussion = async (discussionBody) => {
   }
 }
 
-const addReply = async (replyBody) => {
-  try {
-    const reply = new Reply(replyBody);
-    await reply.save();
-    return reply;
-  } catch (error) {
-    throw error;
-  }
-}
+0
 
 const getDiscussionById = async (id) => {
   return await Discussion.findById(id);
@@ -58,14 +52,42 @@ const getAllDiscussions = async (filter, options) => {
     {
       $lookup: {
         from: 'replies',
-        localField: '_id',
-        foreignField: 'discussion',
+        let: { discussion_id: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$discussion', '$$discussion_id']
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'user',
+              foreignField: '_id',
+              as: 'user'
+            }
+          },
+          {
+            $addFields: {
+              user: { $arrayElemAt: ['$user', 0] }
+            }
+          },
+          {
+            $project: {
+              reply: 1,
+              likes: 1,
+              dislikes: 1,
+              'user.fullName': 1,
+              'user.image': 1
+            }
+          },
+          {
+            $limit: 3 // Limit the number of replies to 3
+          }
+        ],
         as: 'replies'
-      }
-    },
-    {
-      $addFields: {
-        totalReplies: { $size: "$replies" } // Adding totalReplies field to each discussion with the count of replies
       }
     },
     {
@@ -78,7 +100,7 @@ const getAllDiscussions = async (filter, options) => {
     },
     {
       $addFields: {
-        'user': { $arrayElemAt: ['$user', 0] } // Get the first element of the user array
+        'user': { $arrayElemAt: ['$user', 0] }
       }
     },
     {
@@ -88,21 +110,7 @@ const getAllDiscussions = async (filter, options) => {
         dislikes: 1,
         'user.fullName': 1,
         'user.image': 1,
-        replies: {
-          $map: {
-            input: "$replies",
-            as: "reply",
-            in: {
-              reply: "$$reply.reply",
-              likes: "$$reply.likes",
-              dislikes: "$$reply.dislikes",
-              user: {
-                fullName: "$$reply.user.fullName",
-                image: "$$reply.user.image"
-              }
-            }
-          }
-        }
+        replies: 1
       }
     }
   ];
@@ -111,9 +119,51 @@ const getAllDiscussions = async (filter, options) => {
   const totalResults = await Discussion.countDocuments(filter);
   const totalPages = Math.ceil(totalResults / limit);
   const pagination = { totalResults, totalPages, currentPage: page, limit };
-  
+
   return { discussionList: discussionListWithReplies, pagination };
 };
+
+const getDiscussionWithReplies = async (discussionId, options) => {
+  const page = Number(options.page) || 1;
+  const limit = Number(options.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const replies = await Reply.find({ discussion: discussionId })
+    .skip(skip)
+    .limit(limit)
+    .select('reply likes dislikes user')
+    .populate('user', 'fullName image')
+
+  const totalResults = await Reply.countDocuments({ discussion: discussionId });
+  const totalPages = Math.ceil(totalResults / limit);
+  const pagination = { totalResults, totalPages, currentPage: page, limit };
+
+  const discussion = await Discussion.findById(discussionId).select('discussion likes dislikes user').populate('user', 'fullName image');
+
+  // Create a structure similar to the provided example
+  const formattedReplies = replies.map(reply => ({
+    _id: reply._id,
+    reply: reply.reply,
+    user: {
+      fullName: reply.user.fullName,
+      image: reply.user.image
+    },
+    likes: reply.likes,
+    dislikes: reply.dislikes
+  }));
+
+  const formattedDiscussion = {
+    _id: discussion._id,
+    discussion: discussion.discussion,
+    user: discussion.user,
+    likes: discussion.likes,
+    dislikes: discussion.dislikes,
+    replies: formattedReplies,
+  };
+
+  return { discussion: formattedDiscussion, pagination };
+};
+
 
 
 
@@ -142,5 +192,6 @@ module.exports = {
   getAllDiscussions,
   deleteDiscussion,
   getAllReplies,
-  addReply
+  addReply,
+  getDiscussionWithReplies
 }

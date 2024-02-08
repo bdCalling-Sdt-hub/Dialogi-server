@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const userSchema = new mongoose.Schema({
-  fullName: { type: String, required: [true, 'Name is must be given'], trim: true },
+  fullName: { type: String, required: [true, 'Name must be given'], trim: true },
   email: {
     type: String,
     required: [true, 'Email is required'],

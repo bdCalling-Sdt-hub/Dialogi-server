@@ -3,18 +3,28 @@ const mongoose = require('mongoose');
 const subscriptionSchema = new mongoose.Schema({
   name:{type: String, required: false},
   type:{type: String, enum:["default", "premium","premium-plus"],required: false},
-  
-  isChatAvailable:{type: Boolean, required: false},
-  isGroupChatAvailable:{type: Boolean, required: false},
-  isCommunityDiscussionAvailable:{type: Boolean, required: false},
 
-  isAddAvailable:{type: Boolean, required: false},
-  categoryAccessNumber:{type: Number, required: false},
-  isCategoryAccessUnlimited:{type: Boolean, required: false},
-  questionAccessNumber:{type: Number, required: false},
-  isQuestionAccessUnlimited:{type: Boolean, required: false},
-  shareAccess:{type: Boolean, required: false},
-  isEarlyAccessAvailable:{type: Boolean, required: false},
+  //show add
+  isAddAvailable:{type: Boolean, default: false},
+
+  //category access
+  categoryAccessNumber:{type: Number, default: 0},
+  isCategoryAccessUnlimited:{type: Boolean, default: false},
+
+  //question access
+  questionAccessNumber:{type: Number, default: 0},
+  isQuestionAccessUnlimited:{type: Boolean, default: false},
+  
+  //chat access
+  isChatAvailable:{type: Boolean, default: false},
+  isGroupChatAvailable:{type: Boolean, default: false},
+  isCommunityDiscussionAvailable:{type: Boolean, default: false},
+
+  //early access
+  isEarlyAccessAvailable:{type: Boolean, default: false},
+  
+  //profile update access
+  updateProfileAccess:{type: Boolean, default: false},
 }, { timestamps: true }
 );
 
