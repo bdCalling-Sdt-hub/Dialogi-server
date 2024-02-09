@@ -1,6 +1,6 @@
 const Discussion = require('../models/Discussion');
 const Reply = require('../models/Reply');
-const { ObjectId } = require('mongodb');
+const mongoose = require('mongoose');
 
 
 const addDiscussion = async (discussionBody) => {
@@ -13,7 +13,15 @@ const addDiscussion = async (discussionBody) => {
   }
 }
 
-0
+const addReply = async (replyBody) => {
+  try {
+    const reply = new Reply(replyBody);
+    await reply.save();
+    return reply;
+  } catch (error) {
+    throw error;
+  }
+}
 
 const getDiscussionById = async (id) => {
   return await Discussion.findById(id);
@@ -24,7 +32,7 @@ const getAllReplies = async (filter, options) => {
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const replyList = await Reply.find({ ...filter }).skip(skip).limit(limit).sort({ createdAt: -1 });
+  const replyList = await Reply.find({ ...filter }).skip(skip).limit(limit).sort({ createdAt: -1 }).populate('discussion', 'discussion').populate('user', 'fullName image');
   const totalResults = await Reply.countDocuments({ ...filter });
   const totalPages = Math.ceil(totalResults / limit);
   const pagination = { totalResults, totalPages, currentPage: page, limit };
@@ -32,13 +40,17 @@ const getAllReplies = async (filter, options) => {
 };
 
 const getAllDiscussions = async (filter, options) => {
+
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
+  const question = new mongoose.Types.ObjectId(filter.question);
 
   const pipeline = [
     {
-      $match: filter
+      $match: {
+        "question": question
+      }
     },
     {
       $sort: { createdAt: -1 }
@@ -104,13 +116,27 @@ const getAllDiscussions = async (filter, options) => {
       }
     },
     {
+      $lookup: {
+        from: 'questions', // Assuming your questions collection is named 'questions'
+        localField: 'question',
+        foreignField: '_id',
+        as: 'question'
+      }
+    },
+    {
+      $addFields: {
+        'question': { $arrayElemAt: ['$question', 0] }
+      }
+    },
+    {
       $project: {
         discussion: 1,
         likes: 1,
         dislikes: 1,
         'user.fullName': 1,
         'user.image': 1,
-        replies: 1
+        replies: 1,
+        'question.question': 1
       }
     }
   ];
@@ -128,6 +154,12 @@ const getDiscussionWithReplies = async (discussionId, options) => {
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
 
+  const discussion = await Discussion.findById(discussionId).select('discussion likes dislikes user').populate('user', 'fullName image');
+
+  if (!discussion) {
+    return null;
+  }
+
   const replies = await Reply.find({ discussion: discussionId })
     .skip(skip)
     .limit(limit)
@@ -137,8 +169,6 @@ const getDiscussionWithReplies = async (discussionId, options) => {
   const totalResults = await Reply.countDocuments({ discussion: discussionId });
   const totalPages = Math.ceil(totalResults / limit);
   const pagination = { totalResults, totalPages, currentPage: page, limit };
-
-  const discussion = await Discussion.findById(discussionId).select('discussion likes dislikes user').populate('user', 'fullName image');
 
   // Create a structure similar to the provided example
   const formattedReplies = replies.map(reply => ({
@@ -163,9 +193,6 @@ const getDiscussionWithReplies = async (discussionId, options) => {
 
   return { discussion: formattedDiscussion, pagination };
 };
-
-
-
 
 const updateDiscussion = async (discussionId, discussionbody) => {
   try {

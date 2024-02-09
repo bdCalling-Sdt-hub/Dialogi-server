@@ -17,6 +17,7 @@ const isValidUser = async (req, res, next) => {
         req.body.userId = decodedData._id;
         req.body.userRole = decodedData.role;
         req.body.userEmail = decodedData.email;
+        req.body.userSubscription = decodedData.subscription;
         next();
     } catch (error) {
         console.log("Middleware Error", error.message)

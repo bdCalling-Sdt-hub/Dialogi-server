@@ -9,11 +9,12 @@ const chatSchema = mongoose.Schema(
     }],
     groupName: {
       type: String,
-      required: false,
+      default: "New Group"
     },
     type: {
       type: String,
-      required: false,
+      enum: ["group", "single", "community"],
+      default: "single"
     },
     groupAdmin: {
       type: mongoose.Schema.Types.ObjectId,

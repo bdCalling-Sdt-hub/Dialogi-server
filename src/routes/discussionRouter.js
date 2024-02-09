@@ -5,10 +5,10 @@ const { isValidUser } = require('../middlewares/auth')
 
 
 router.post('/',  isValidUser, addNewDiscussion);
-router.get('/', allDiscussions);
-router.get('/:id', getDiscussionDetails);
 router.post('/reply', isValidUser, addNewReply);
 router.get('/reply', allReplies);
+router.get('/specific/:question', allDiscussions);
+router.get('/:id', getDiscussionDetails);
 
 
 module.exports = router;

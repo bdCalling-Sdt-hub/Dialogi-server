@@ -25,7 +25,8 @@ const userSchema = new mongoose.Schema({
       path: 'public\\uploads\\users\\user.png'
     }
   },
-  role: { type: String, enum: ['user', 'admin'], default: 'user' }
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  subscription: { type: String, enum: ['default', 'premium', 'premium-plus'], default: 'default' },
 }, { timestamps: true }, {
   toJSON: {
     transform(doc, ret) {

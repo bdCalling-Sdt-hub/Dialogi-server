@@ -39,7 +39,9 @@ const allDiscussions = async (req, res) => {
   try{
     const { page, limit } = req.query;
     const options = { page, limit };
-    const filter = {};
+    const filter = {
+      question: req.params.question
+    };
     const discussions = await getAllDiscussions(filter, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('discussions'), data: discussions }));
   }

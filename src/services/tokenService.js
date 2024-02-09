@@ -1,6 +1,4 @@
-const { verify } = require('jsonwebtoken');
 const Token = require('../models/Token');
-const { set } = require('mongoose');
 
 const addToken = async (tokenBody) => {
   try {
