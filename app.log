@@ -1,0 +1,63 @@
+2024-02-09T11:22:45.359Z [ERROR] Error adding new chat: (Error Path: callback is not a function)
+2024-02-09T10:39:42.109Z [ERROR] Error adding new chat: (Error Path: getChatByParticipants is not defined)
+2024-02-09T09:52:09.369Z [ERROR] Error adding new chat: (Error Path: Chat validation failed: participants.1: Cast to [ObjectId] failed for value "[\n' +
+  "  new ObjectId('65c4ae21fc1cba209aa644b7'),\n" +
+  "  '65c4ae21fc1cba209aa644b',\n" +
+  "  '65c5ebae58a33b0e714e39af'\n" +
+  ']" (type string) at path "participants.1" because of "CastError")
+2024-02-09T09:17:40.068Z [ERROR] Error adding new chat: (Error Path: Chat validation failed: participants.1: Cast to [ObjectId] failed for value "[\n' +
+  "  new ObjectId('65c4ae21fc1cba209aa644b7'),\n" +
+  "  '65c4ae21fc1cba209aa644b',\n" +
+  "  '65c5ebae58a33b0e714e39af'\n" +
+  ']" (type string) at path "participants.1" because of "CastError")
+2024-02-09T09:15:57.299Z [ERROR] Error adding new chat: (Error Path: Chat validation failed: participants.1: Cast to [ObjectId] failed for value "[\n' +
+  "  new ObjectId('65c4ae21fc1cba209aa644b7'),\n" +
+  "  '65c4ae21fc1cba209aa644b',\n" +
+  "  '65c5ebae58a33b0e714e39af'\n" +
+  ']" (type string) at path "participants.1" because of "CastError")
+2024-02-09T09:15:17.012Z [ERROR] Error adding new chat: (Error Path: Chat validation failed: participants.1: Cast to [ObjectId] failed for value "[\n' +
+  "  new ObjectId('65c4ae21fc1cba209aa644b7'),\n" +
+  "  '65c4ae21fc1cba209aa644b',\n" +
+  "  '65c5ebae58a33b0e714e39af'\n" +
+  ']" (type string) at path "participants.1" because of "CastError")
+2024-02-09T09:14:54.146Z [ERROR] Error adding new chat: (Error Path: Chat validation failed: participants.1: Cast to [ObjectId] failed for value "[\n' +
+  "  new ObjectId('65c4ae21fc1cba209aa644b7'),\n" +
+  "  '65c4ae21fc1cba209aa644b',\n" +
+  "  '65c5ebae58a33b0e714e39af'\n" +
+  ']" (type string) at path "participants.1" because of "CastError")
+2024-02-09T09:14:11.842Z [ERROR] Error adding new chat: (Error Path: Chat validation failed: participants.1: Cast to [ObjectId] failed for value "[\n' +
+  "  new ObjectId('65c4ae21fc1cba209aa644b7'),\n" +
+  "  '65c4ae21fc1cba209aa644b',\n" +
+  "  '65c5ebae58a33b0e714e39af'\n" +
+  ']" (type string) at path "participants.1" because of "CastError")
+2024-02-09T09:13:51.121Z [ERROR] Error adding new chat: (Error Path: chatService is not defined)
+2024-02-09T09:09:02.224Z [ERROR] {} (Error Path: /api/users/sign-up)
+2024-02-09T03:26:28.300Z [ERROR] Class constructor ObjectId cannot be invoked without 'new' (Error Path: /api/discussions/specific/65c591feb7944e6061fccae7)
+2024-02-09T02:52:49.463Z [ERROR] Cast to ObjectId failed for value "reply" (type string) at path "_id" for model "Discussion" (Error Path: /api/discussions/reply)
+2024-02-09T02:51:17.514Z [ERROR] Cast to ObjectId failed for value "reply" (type string) at path "_id" for model "Discussion" (Error Path: /api/discussions/reply)
+2024-02-09T02:42:28.823Z [ERROR] Cannot read properties of null (reading '_id') (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T06:56:36.004Z [ERROR] {} (Error Path: /api/questions/Friend?limit=2)
+2024-02-08T06:56:12.063Z [ERROR] {} (Error Path: /api/questions/Friend?limit=2)
+2024-02-08T06:32:20.684Z [ERROR] Unrecognized pipeline stage name: '$select' (Error Path: /api/questions)
+2024-02-08T06:28:21.422Z [ERROR] Question validation failed: subCategory: Sub-category is required, question: Question is required (Error Path: /api/questions)
+2024-02-08T06:22:43.406Z [ERROR] {"name":"TokenExpiredError","message":"jwt expired","expiredAt":"2024-02-06T09:32:02.000Z"} (Error Path: /api/questions)
+2024-02-08T06:22:35.781Z [ERROR] {"name":"TokenExpiredError","message":"jwt expired","expiredAt":"2024-02-06T09:32:02.000Z"} (Error Path: /api/questions)
+2024-02-08T06:22:35.679Z [ERROR] {"name":"TokenExpiredError","message":"jwt expired","expiredAt":"2024-02-06T09:32:02.000Z"} (Error Path: /api/questions)
+2024-02-08T04:54:23.279Z [ERROR] objectIdDiscussionId is not defined (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:54:00.344Z [ERROR] Class constructor ObjectId cannot be invoked without 'new' (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:45:20.076Z [ERROR] Class constructor ObjectId cannot be invoked without 'new' (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:43:54.618Z [ERROR] Class constructor ObjectId cannot be invoked without 'new' (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:42:55.748Z [ERROR] Class constructor ObjectId cannot be invoked without 'new' (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:42:30.105Z [ERROR] ObjectId is not defined (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:41:01.439Z [ERROR] ObjectId is not defined (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:35:40.592Z [ERROR] mongoos is not defined (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:34:53.990Z [ERROR] Class constructor ObjectId cannot be invoked without 'new' (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:34:07.940Z [ERROR] mongoose is not defined (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:32:14.450Z [ERROR] discussionId is not defined (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:31:22.275Z [ERROR] Cannot read properties of undefined (reading 'page') (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:30:57.356Z [ERROR] {} (Error Path: /api/discussions/65c1fa4ab0b0ae8b28bda9e0)
+2024-02-08T04:04:29.971Z [ERROR] {"name":"TokenExpiredError","message":"jwt expired","expiredAt":"2024-02-07T09:15:45.000Z"} (Error Path: /api/discussions/reply)
+2024-02-08T03:49:49.650Z [ERROR] PlanExecutor error during aggregation :: caused by :: input to $filter must be an array not objectId (Error Path: /api/discussions)
+2024-02-08T03:27:59.629Z [ERROR] PlanExecutor error during aggregation :: caused by :: input to $map must be an array not object (Error Path: /api/discussions)
+2024-02-08T03:19:29.331Z [ERROR] PlanExecutor error during aggregation :: caused by :: input to $map must be an array not objectId (Error Path: /api/discussions)
+2024-02-08T03:18:01.216Z [ERROR] PlanExecutor error during aggregation :: caused by :: input to $map must be an array not objectId (Error Path: /api/discussions)
