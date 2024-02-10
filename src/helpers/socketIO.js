@@ -52,17 +52,14 @@ const socketIO = (io) => {
       try {
         var chat;
         if (data?.participants?.length >= 2) {
-          if (data?.participants?.length >= 3 && socket.decodedToken.subscription === 'premium-plus') {
-            data.type = "group";
-          }
-          if (data?.participants?.length >= 3 && socket.decodedToken.subscription !== 'premium-plus') {
+          if (data?.type === "group" && socket.decodedToken.subscription !== 'premium-plus') {
             return callback({
               status: "Error",
               message: "You must have premium plus subscription to create group chat",
               data: null
             });
           }
-          chat = await getChatByParticipants(data.participants);
+          chat = await getChatByParticipants(data);
           if (chat) {
             return callback({
               status: "Success",
@@ -111,20 +108,25 @@ const socketIO = (io) => {
 
         const message = await addMessage(data);
 
-        const myChat = await chatService.getChatById(message.chat);
+        // const myChat = await chatService.getChatById(message.chat);
 
-        const roomID = (myChat.participants[0] === data?.sender ? myChat.participants[1] : myChat.participants[0]).toString();
+        // const roomID = (myChat.participants[0] === data?.sender ? myChat.participants[1] : myChat.participants[0]).toString();
 
-        const chats = await chatService.getChats(
-          data?.filter,
-          data?.options,
-          data?.userId
-        );
+        // const chats = await chatService.getChats(
+        //   data?.filter,
+        //   data?.options,
+        //   data?.userId
+        // );
 
-        io.to("room" + message.chat).emit("chat-list", chats);
+        // io.to("room" + message.chat).emit("chat-list", chats);
+
+        const roomIDs = message?.chat?.participants?.map(participant => 'chat-notification::' + participant.toString()) || [];
+        console.log('roomIDs--->', roomIDs, message?.chat?.participants);
+        io.emit(roomIDs, message);
         callback({
           status: "Success",
-          message: message.message,
+          message: "Message send successfully",
+          data: message
         });
       } catch (error) {
         console.error("Error adding new message:", error.message);
