@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
   },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   subscription: { type: String, enum: ['default', 'premium', 'premium-plus'], default: 'default' },
+  subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', required: false },
 }, { timestamps: true }, {
   toJSON: {
     transform(doc, ret) {

@@ -15,15 +15,15 @@ const getSubscriptionById = async (id) => {
 }
 
 const getAllSubscriptions = async (filter, options) => {
-  // const page = Number(options.page) || 1;
-  // const limit = Number(options.limit) || 10;
-  // const skip = (page - 1) * limit;
+  const page = Number(options.page) || 1;
+  const limit = Number(options.limit) || 10;
+  const skip = (page - 1) * limit;
 
-  const subscriptionsList = await Subscription.find({ ...filter });
-  // const totalResults = await Subscription.countDocuments({ ...filter });
-  // const totalPages = Math.ceil(totalResults / limit);
-  // const pagination = { totalResults, totalPages, currentPage: page, limit };
-  return subscriptionsList;
+  const subscriptionsList = await Subscription.find({ ...filter }).limit(limit).skip(skip);
+  const totalResults = await Subscription.countDocuments({ ...filter });
+  const totalPages = Math.ceil(totalResults / limit);
+  const pagination = { totalResults, totalPages, currentPage: page, limit };
+  return {subscriptionsList, pagination};
 }
 
 const updateSubscription = async (subscriptionId, subscriptionbody) => {

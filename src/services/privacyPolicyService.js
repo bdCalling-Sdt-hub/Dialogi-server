@@ -16,7 +16,7 @@ const addPrivacyPolicy = async (privacyPolicyBody) => {
   }
 }
 
-const findPrivacyPolicy = async (privacyPolicyBody) => {
+const findPrivacyPolicy = async () => {
   try {
     const privacyPolicy = await PrivacyPolicy.findOne();
     return privacyPolicy;

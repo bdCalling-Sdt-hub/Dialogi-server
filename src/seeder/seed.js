@@ -45,6 +45,9 @@ const subscriptionData = [
 
     //profile update access
     updateProfileAccess: false,
+
+    //price
+    price: 0,
   },
   {
     name: "Premium",
@@ -69,6 +72,9 @@ const subscriptionData = [
 
     //profile update access
     updateProfileAccess: false,
+
+    //price
+    price: 1.5,
   },
   {
     name: "Premium Plus",
@@ -93,6 +99,9 @@ const subscriptionData = [
 
     //profile update access
     updateProfileAccess: true,
+
+    //price
+    price: 2.5,
   }
 ]
 

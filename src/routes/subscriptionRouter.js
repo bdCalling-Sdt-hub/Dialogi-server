@@ -1,8 +1,8 @@
 const express = require('express');
-const { makePayment } = require('../controllers/paymentController');
+const { allSubscriptions } = require('../controllers/subscriptionController');
 const router = express.Router();
 const { isValidUser } = require('../middlewares/auth')
 
-router.post('/', isValidUser, makePayment);
+router.get('/', allSubscriptions);
 
 module.exports = router;
