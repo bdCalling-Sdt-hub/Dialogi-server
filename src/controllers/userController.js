@@ -66,10 +66,7 @@ const signUp = async (req, res) => {
         userData.country = country;
       }
       if (req.file) {
-        userData.image = {
-          publicFileUrl: `${req.protocol}://${req.get('host')}/uploads/users/${req.file.filename}`,
-          path: req.file.path
-        }
+        userData.image = `/uploads/users/${req.file.filename}`
       }
       const registeredUser = await addUser(userData);
       const notifMessage = "New user registered named " + fullName;
@@ -286,6 +283,7 @@ const getUsers = async (req, res) => {
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
+    const subscription = req.query.subscription || 'free';
     const filter = {
       role: 'user',
       isBlocked: false
@@ -298,6 +296,9 @@ const getUsers = async (req, res) => {
         { email: searchRegExp },
         { phoneNumber: searchRegExp },
       ]
+    }
+    if(subscription){
+      filter.subscription = subscription;
     }
     const options = { page, limit };
     const { userList, pagination } = await getAllUsers(filter, options);
@@ -527,7 +528,7 @@ const updateProfile = async (req, res) => {
         unlinkImage(user.image.path);
       }
       user.image = {
-        publicFileUrl: `${process.env.IMAGE_UPLOAD_BACKEND_DOMAIN}/uploads/users/${req.file.filename}`,
+        publicFileUrl: `/uploads/users/${req.file.filename}`,
         path: req.file.path
       }
     }

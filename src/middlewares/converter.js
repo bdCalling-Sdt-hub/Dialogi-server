@@ -23,9 +23,7 @@ const convertHeicToPngMiddleware = (UPLOADS_FOLDER) => {
       await fs.unlink(req.file.path);
 
       // Update file properties
-      req.file.path = pngFilePath;
       req.file.filename = pngFileName;
-      req.file.mimetype = 'image/png';
     }
 
     next();

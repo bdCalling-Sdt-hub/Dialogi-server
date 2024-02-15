@@ -12,6 +12,9 @@ const addNewCategory = async (req, res) => {
     if(existingCategory){
       return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'category', message: req.t('category-exists') }));
     }
+    if (req.file) {
+      req.body.image = `/uploads/categories/${req.file.filename}`
+    }
     const category = await addCategory(req.body);
     return res.status(201).json(response({ status: 'Success', statusCode: '201', type: 'category', message: req.t('category-added'), data: category }));
   }

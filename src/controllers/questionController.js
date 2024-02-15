@@ -90,7 +90,7 @@ const getSubCategory = async (req, res) => {
   try{
     const { page, limit } = req.query;
     const options = { page, limit };
-    const filter = { category: req.params.id };
+    const filter = { category: req.params.categoryID };
     const category = await getAllSubCategories(filter, options);
     if(!category){
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'category', message: req.t('category-not-found') }));
