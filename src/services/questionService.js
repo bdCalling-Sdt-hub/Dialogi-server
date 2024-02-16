@@ -87,6 +87,19 @@ const getAllQuestions = async (filter, options) => {
             }
           },
           {
+            $lookup: {
+              from: 'users',
+              localField: 'user',
+              foreignField: '_id',
+              as: 'user'
+            }
+          },
+          {
+            $addFields: {
+              user: { $arrayElemAt: ["$user", 0] }
+            }
+          },
+          {
             $addFields: {
               totalReplies: { $size: '$replies' },
               limitedReplies: { $slice: ['$replies', 3] }
@@ -104,10 +117,19 @@ const getAllQuestions = async (filter, options) => {
             }
           },
           {
+            $addFields: {
+              "limitedReplies.user": { $arrayElemAt: ["$limitedReplies.user", 0] }
+            }
+          },
+          {
             $group: {
               _id: "$_id",
               limitedReplies: { $push: "$limitedReplies" },
-              totalReplies: { $first: "$totalReplies" }
+              discussion: { $first: "$discussion" },
+              totalReplies: { $first: "$totalReplies" },
+              likes: { $first: "$likes" }, // Include likes
+              dislikes: { $first: "$dislikes" }, // Include dislikes
+              user: { $first: "$user" }
             }
           },
           {
@@ -115,7 +137,11 @@ const getAllQuestions = async (filter, options) => {
               totalReplies: 1,
               limitedReplies: {
                 $slice: ["$limitedReplies", 3]
-              }
+              },
+              likes: 1, // Project likes
+              dislikes: 1, // Project dislikes
+              discussion: 1,
+              user: 1
             }
           },
         ],
@@ -126,17 +152,15 @@ const getAllQuestions = async (filter, options) => {
       $project:{
         question: 1,
         subCategory: 1,
-        discussions: 1,
-        
+        discussions: 1, // Include discussions field here
       }
     }
   ]);
-  return questions;
+  const totalResults = await Question.countDocuments(filter);
+  const totalPages = Math.ceil(totalResults / limit);
+  const pagination = { totalResults, totalPages, currentPage: page, limit };
+  return {questions, pagination};
 };
-
-
-
-
 
 
 const updateQuestion = async (questionId, questionbody) => {

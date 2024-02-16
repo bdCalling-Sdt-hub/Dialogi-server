@@ -40,6 +40,7 @@ const getAllReplies = async (filter, options) => {
 };
 
 const getAllDiscussions = async (filter, options) => {
+
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
@@ -115,6 +116,19 @@ const getAllDiscussions = async (filter, options) => {
       }
     },
     {
+      $lookup: {
+        from: 'questions', // Assuming your questions collection is named 'questions'
+        localField: 'question',
+        foreignField: '_id',
+        as: 'question'
+      }
+    },
+    {
+      $addFields: {
+        'question': { $arrayElemAt: ['$question', 0] }
+      }
+    },
+    {
       $project: {
         discussion: 1,
         likes: 1,
@@ -122,27 +136,18 @@ const getAllDiscussions = async (filter, options) => {
         'user.fullName': 1,
         'user.image': 1,
         replies: 1,
+        'question.question': 1
       }
     }
   ];
 
   const discussionListWithReplies = await Discussion.aggregate(pipeline);
-  
-  // Fetch the question separately
-  const questionData = await Question.findOne({ _id: question }, { question: 1 });
-  
-  // Merge the question with each discussion
-  discussionListWithReplies.forEach(discussion => {
-    discussion.question = questionData.question;
-  });
-
   const totalResults = await Discussion.countDocuments(filter);
   const totalPages = Math.ceil(totalResults / limit);
   const pagination = { totalResults, totalPages, currentPage: page, limit };
 
   return { discussionList: discussionListWithReplies, pagination };
 };
-
 
 const getDiscussionWithReplies = async (discussionId, options) => {
   const page = Number(options.page) || 1;

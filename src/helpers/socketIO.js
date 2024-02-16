@@ -2,6 +2,8 @@ const { addChat, getChatByParticipants } = require('../services/chatService');
 const { addMessage, getMessageByChatId } = require('../services/messageService');
 const logger = require('../helpers/logger');
 const jwt = require('jsonwebtoken');
+const { upgradeLike, getLikeCountByDiscussion } = require('../services/likeService');
+const { upgradeDislike, getDislikeCountByDiscussion } = require('../services/dislikeService');
 require('dotenv').config();
 
 const socketIO = (io) => {
@@ -38,6 +40,54 @@ const socketIO = (io) => {
         callback("Join room successful");
       } else {
         callback("Must provide a valid user id");
+      }
+    });
+
+    socket.on("dialogi-like", async (data, callback) => {
+      try {
+        console.log('someone likes--->', data);
+        const like = await upgradeLike(data);
+        const count = await getLikeCountByDiscussion(data.discussion);
+        if (data.type === "discussion") {
+          const roomID = 'discussion-like-notification::' + like.data._id;
+          io.emit(roomID, { status: "Success", message: "Liked", data: count });
+        } if (data.type === "reply") {
+          const roomID = 'reply-like-notification::' + like.data._id;
+          io.emit(roomID, { status: "Success", message: "Liked", data: count });
+        }
+        callback({
+          status: "OK",
+          message: like.message,
+          data: like.data
+        });
+      }
+      catch(error){
+        console.error("Error liking:", error.message);
+        callback({ status: "Error", message: error.message, data: null });
+      }
+    });
+
+    socket.on("dialogi-dislike", async (data, callback) => {
+      try {
+        console.log('someone likes--->', data);
+        const like = await upgradeDislike(data);
+        const count = await getDislikeCountByDiscussion(data.discussion);
+        if (data.type === "discussion") {
+          const roomID = 'discussion-dislike-notification::' + like.data._id;
+          io.emit(roomID, { status: "Success", message: "Liked", data: count });
+        } if (data.type === "reply") {
+          const roomID = 'reply-dislike-notification::' + like.data._id;
+          io.emit(roomID, { status: "Success", message: "Liked", data: count });
+        }
+        callback({
+          status: "OK",
+          message: like.message,
+          data: like.data
+        });
+      }
+      catch(error){
+        console.error("Error liking:", error.message);
+        callback({ status: "Error", message: error.message, data: null });
       }
     });
 
@@ -133,8 +183,6 @@ const socketIO = (io) => {
         logger.error("Error adding new message:", error.message);
       }
     });
-
-    // get message by chat id
 
     socket.on("get-messages", async (data, callback) => {
       console.log("get-messages info---->", data);
