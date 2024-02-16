@@ -30,8 +30,6 @@ const getAllSubCategories = async (filter, options) => {
       { $skip: skip },
       { $limit: limit }
     ];
-    
-    
 
     // Execute aggregation pipeline
     const subCategoryList = await Question.aggregate(aggregationPipeline);
@@ -61,13 +59,85 @@ const getAllQuestions = async (filter, options) => {
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
+  const category = new mongoose.Types.ObjectId(filter.category);
+  const subCategory = filter.subCategory;
+  const questions = await Question.aggregate([
+    { $match: { 
+      category: category,
+      subCategory: subCategory
+     } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: 'discussions',
+        let: { questionId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$question', '$$questionId'] }
+            }
+          },
+          {
+            $lookup: {
+              from: 'replies',
+              localField: '_id',
+              foreignField: 'discussion',
+              as: 'replies'
+            }
+          },
+          {
+            $addFields: {
+              totalReplies: { $size: '$replies' },
+              limitedReplies: { $slice: ['$replies', 3] }
+            }
+          },
+          {
+            $unwind: "$limitedReplies"
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'limitedReplies.user',
+              foreignField: '_id',
+              as: 'limitedReplies.user'
+            }
+          },
+          {
+            $group: {
+              _id: "$_id",
+              limitedReplies: { $push: "$limitedReplies" },
+              totalReplies: { $first: "$totalReplies" }
+            }
+          },
+          {
+            $project: {
+              totalReplies: 1,
+              limitedReplies: {
+                $slice: ["$limitedReplies", 3]
+              }
+            }
+          },
+        ],
+        as: 'discussions'
+      },
+    },
+    {
+      $project:{
+        question: 1,
+        subCategory: 1,
+        discussions: 1,
+        
+      }
+    }
+  ]);
+  return questions;
+};
 
-  const questionsList = await Question.find({ ...filter }).skip(skip).limit(limit).select('question');
-  const totalResults = await Question.countDocuments({ ...filter });
-  const totalPages = Math.ceil(totalResults / limit);
-  const pagination = { totalResults, totalPages, currentPage: page, limit };
-  return { questionsList, pagination };
-}
+
+
+
+
 
 const updateQuestion = async (questionId, questionbody) => {
   try {

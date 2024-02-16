@@ -5,6 +5,6 @@ const { isValidUser } = require('../middlewares/auth');
 
 router.post('/',  isValidUser, addNewQuestion);
 router.get('/sub-category/:categoryID', getSubCategory);
-router.get('/:subCategory', allQuestions);
+router.get('/:subCategory/:category', allQuestions);
 
 module.exports = router;

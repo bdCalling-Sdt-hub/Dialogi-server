@@ -28,6 +28,7 @@ const allQuestions = async (req, res) => {
     const options = { page, limit };
     const filter = {
       subCategory: req.params.subCategory,
+      category: req.params.category
     };
     const questions = await getAllQuestions(filter, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('questions'), data: questions }));
