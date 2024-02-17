@@ -1,5 +1,6 @@
 const { default: mongoose } = require('mongoose');
 const Question = require('../models/Question');
+const Discussion = require('../models/Discussion');
 
 const addQuestion = async (questionBody) => {
   try {
@@ -57,17 +58,23 @@ const getQuestionByQuestionAndSubCategory = async (question, subCategory) => {
 
 const getAllQuestions = async (filter, options) => {
   const page = Number(options.page) || 1;
-  const limit = Number(options.limit) || 10;
-  const skip = (page - 1) * limit;
+  const questionlimit = 1;
+  const skip = (page - 1) * questionlimit;
+
+  const discussionPage = Number(options.discussionPage) || 1;
+  const discussionLimit = Number(options.discussionLimit) || 3;
+  const discussionSkip = (discussionPage - 1) * discussionLimit;
+
   const category = new mongoose.Types.ObjectId(filter.category);
   const subCategory = filter.subCategory;
+  
   const questions = await Question.aggregate([
     { $match: { 
       category: category,
       subCategory: subCategory
-     } },
+    } },
     { $skip: skip },
-    { $limit: limit },
+    { $limit: questionlimit },
     {
       $lookup: {
         from: 'discussions',
@@ -102,48 +109,19 @@ const getAllQuestions = async (filter, options) => {
           {
             $addFields: {
               totalReplies: { $size: '$replies' },
-              limitedReplies: { $slice: ['$replies', 3] }
-            }
-          },
-          {
-            $unwind: "$limitedReplies"
-          },
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'limitedReplies.user',
-              foreignField: '_id',
-              as: 'limitedReplies.user'
-            }
-          },
-          {
-            $addFields: {
-              "limitedReplies.user": { $arrayElemAt: ["$limitedReplies.user", 0] }
-            }
-          },
-          {
-            $group: {
-              _id: "$_id",
-              limitedReplies: { $push: "$limitedReplies" },
-              discussion: { $first: "$discussion" },
-              totalReplies: { $first: "$totalReplies" },
-              likes: { $first: "$likes" }, // Include likes
-              dislikes: { $first: "$dislikes" }, // Include dislikes
-              user: { $first: "$user" }
             }
           },
           {
             $project: {
               totalReplies: 1,
-              limitedReplies: {
-                $slice: ["$limitedReplies", 3]
-              },
-              likes: 1, // Project likes
-              dislikes: 1, // Project dislikes
+              likes: 1,
+              dislikes: 1,
               discussion: 1,
-              user: 1
+              user: { fullName: "$user.fullName", image: "$user.image" }
             }
           },
+          { $skip: discussionSkip },
+          { $limit: discussionLimit }
         ],
         as: 'discussions'
       },
@@ -152,14 +130,25 @@ const getAllQuestions = async (filter, options) => {
       $project:{
         question: 1,
         subCategory: 1,
-        discussions: 1, // Include discussions field here
+        discussions: 1,
       }
     }
   ]);
+
+  // Calculate pagination for questions
   const totalResults = await Question.countDocuments(filter);
-  const totalPages = Math.ceil(totalResults / limit);
-  const pagination = { totalResults, totalPages, currentPage: page, limit };
-  return {questions, pagination};
+  const totalPages = Math.ceil(totalResults / questionlimit);
+  const pagination = { totalResults, totalPages, currentPage: page, limit:questionlimit };
+
+  // Calculate pagination for discussions for each question
+  const discussionPagination = [];
+  for (const question of questions) {
+    const totalDiscussionResults = await Discussion.countDocuments({ question: question._id });
+    const totalDiscussionPages = Math.ceil(totalDiscussionResults / discussionLimit);
+    discussionPagination.push({ totalResults: totalDiscussionResults, totalPages: totalDiscussionPages, currentPage: discussionPage, limit: discussionLimit });
+  }
+
+  return {questions, pagination, discussionPagination};
 };
 
 

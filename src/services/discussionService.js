@@ -17,11 +17,27 @@ const addReply = async (replyBody) => {
   try {
     const reply = new Reply(replyBody);
     await reply.save();
-    return reply;
+
+    // Populate the user field of the saved reply
+    const savedReply = await reply.populate('user', 'fullName image');
+
+    // Construct the desired return object
+    const formattedReply = {
+      reply: savedReply.reply,
+      user: {
+        fullName: savedReply.user.fullName,
+        image: savedReply.user.image
+      },
+      likes: savedReply.likes,
+      dislikes: savedReply.dislikes
+    };
+
+    return formattedReply;
   } catch (error) {
     throw error;
   }
 }
+
 
 const getDiscussionById = async (id) => {
   return await Discussion.findById(id);
@@ -40,7 +56,6 @@ const getAllReplies = async (filter, options) => {
 };
 
 const getAllDiscussions = async (filter, options) => {
-
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;

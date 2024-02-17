@@ -28,7 +28,7 @@ const findFaq = async (faqBody) => {
 
 const getFaqs = async () => {
   try {
-    return await Faq.findOne().select('question answer');
+    return await Faq.find().select('question answer');
   }
   catch (error) {
     throw error;

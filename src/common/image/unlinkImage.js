@@ -17,8 +17,4 @@ function unlinkImage(imagePaths) {
   });
 }
 
-const createFileDetails = (folderName, filename) => {
-  return `/uploads/${folderName}/${filename}`;
-};
-
-module.exports = { unlinkImage, createFileDetails };
+module.exports = { unlinkImage };

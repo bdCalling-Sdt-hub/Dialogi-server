@@ -1,2 +1,0 @@
-2024-02-16T11:52:35.225Z [ERROR] {"name":"TokenExpiredError","message":"jwt expired","expiredAt":"2024-02-16T09:14:51.000Z"} (Error Path: /api/friends?status=accepted)
-2024-02-16T10:26:44.413Z [ERROR] {} (Error Path: /api/questions/sub-category/Best%20Friend%2089101112/65c59173b7944e6061fccae1?limit=1)

@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
   dateOfBirth: { type: Date, required: false },
   image: {
     type: String,
-    default:"uploads/users/user.png"
+    default:"/uploads/users/user.png"
   },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   subscription: { type: String, enum: ['default', 'premium', 'premium-plus'], default: 'default' },

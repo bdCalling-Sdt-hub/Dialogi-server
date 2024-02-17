@@ -24,8 +24,8 @@ const addNewQuestion = async (req, res) => {
 
 const allQuestions = async (req, res) => {
   try{
-    const { page, limit } = req.query;
-    const options = { page, limit };
+    const { page, discussionLimit, discussionPage } = req.query;
+    const options = { page, discussionLimit,discussionPage };
     const filter = {
       subCategory: req.params.subCategory,
       category: req.params.category

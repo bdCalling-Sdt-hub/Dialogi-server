@@ -512,25 +512,21 @@ const signInWithPasscode = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { fullName, phoneNumber, countryCode, countryISO } = req.body;
+    const { fullName, dateOfBirth, address } = req.body;
     const user = await getUserById(req.body.userId);
     if (!user) {
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
     }
     user.fullName = !fullName ? user.fullName : fullName;
-    user.phoneNumber = !phoneNumber ? user.phoneNumber : phoneNumber;
-    user.countryCode = !countryCode ? user.countryCode : countryCode;
-    user.countryISO = !countryISO ? user.countryISO : countryISO;
+    user.dateOfBirth = !dateOfBirth ? user.dateOfBirth : new Date(dateOfBirth);
+    user.address = !address ? user.address : address;
     if (req.file) {
-      const defaultPath = 'public\\uploads\\users\\user.png';
+      const defaultPath = '/uploads/users/user.png';
       console.log('req.file', req.file, user.image.path, defaultPath);
-      if (user.image.path !== defaultPath) {
-        unlinkImage(user.image.path);
+      if (user.image !== defaultPath) {
+        unlinkImage(user.image);
       }
-      user.image = {
-        publicFileUrl: `/uploads/users/${req.file.filename}`,
-        path: req.file.path
-      }
+      user.image = `/uploads/users/${req.file.filename}`
     }
     const updatedUser = await user.save();
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-updated'), data: updatedUser }));
