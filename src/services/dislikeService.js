@@ -29,7 +29,16 @@ const getDislikeCountByReply = async (replyId) => {
 
 const deleteDislike = async (dislikeId) => {
   try {
-    return findAndDeleteDislike(dislikeId);
+    return Dislike.findAndDeleteDislike(dislikeId);
+  }
+  catch (error) {
+    throw error;
+  }
+}
+
+const deleteDislikeByUserId = async (userId) => {
+  try {
+    return await Dislike.deleteMany({ user: userId });
   }
   catch (error) {
     throw error;
@@ -37,10 +46,10 @@ const deleteDislike = async (dislikeId) => {
 }
 
 
-
 module.exports = {
   upgradeDislike,
   getDislikeCountByDiscussion,
   getDislikeCountByReply,
-  deleteDislike
+  deleteDislike,
+  deleteDislikeByUserId
 }

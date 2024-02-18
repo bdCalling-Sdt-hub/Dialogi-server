@@ -10,6 +10,11 @@ const addPayment = async (paymentBody) => {
   }
 }
 
+const deletePaymentInfoByUserId = async (userId) => {
+  return await Payment.deleteMany({ user: userId});
+}
+
 module.exports = {
-  addPayment
+  addPayment,
+  deletePaymentInfoByUserId
 }

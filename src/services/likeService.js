@@ -29,7 +29,16 @@ const getLikeCountByReply = async (replyId) => {
 
 const deleteLike = async (likeId) => {
   try {
-    return findAndDeleteLike(likeId);
+    return Like.findAndDeleteLike(likeId);
+  }
+  catch (error) {
+    throw error;
+  }
+}
+
+const deleteLikeByUserId = async (userId) => {
+  try {
+    return await Like.deleteMany({ user: userId });
   }
   catch (error) {
     throw error;
@@ -42,5 +51,6 @@ module.exports = {
   upgradeLike,
   getLikeCountByDiscussion,
   getLikeCountByReply,
-  deleteLike
+  deleteLike,
+  deleteLikeByUserId
 }

@@ -18,7 +18,12 @@ const getMessageByChatId = async (filters, options) => {
   return await Message.findOne({chat: chatId}).limit(limit).skip(skip).sort({createdAt: -1});
 }
 
+const deleteMessageByUserId = async (userId) => {
+  return await Message.deleteMany({ sender: userId});
+}
+
 module.exports = {
   addMessage,
-  getMessageByChatId
+  getMessageByChatId,
+  deleteMessageByUserId
 }

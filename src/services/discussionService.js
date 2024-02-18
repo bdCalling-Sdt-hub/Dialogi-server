@@ -191,7 +191,8 @@ const getDiscussionWithReplies = async (discussionId, options) => {
     reply: reply.reply,
     user: {
       fullName: reply.user.fullName,
-      image: reply.user.image
+      image: reply.user.image,
+      _id: reply.user._id
     },
     likes: reply.likes,
     dislikes: reply.dislikes
@@ -227,6 +228,15 @@ const deleteDiscussion = async (discussionId) => {
   }
 }
 
+const deleteDiscussionByUserId = async (userId) => {
+  try {
+    return await Discussion.deleteMany({ user: userId});
+  }
+  catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   addDiscussion,
   getDiscussionById,
@@ -235,5 +245,6 @@ module.exports = {
   deleteDiscussion,
   getAllReplies,
   addReply,
-  getDiscussionWithReplies
+  getDiscussionWithReplies,
+  deleteDiscussionByUserId
 }

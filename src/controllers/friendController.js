@@ -1,7 +1,7 @@
 require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
-const { getFriendByParticipantId, addFriend, getFriendByParticipants } = require('../services/frinedService');
+const { getFriendByParticipantId, addFriend, getFriendByParticipants, updateFriend, getFriendById } = require('../services/frinedService');
 
 const makeFriend = async (req, res) => {
   try{
@@ -33,7 +33,7 @@ const getAllFriends = async (req, res) => {
     const { page, limit, status } = req.query;
     const options = { page, limit };
     const filter = {
-      participants:req.body.userId,
+      participants: { $in: [req.body.userId] },
       status: !status ? 'accepted' : status
     };
     const friends = await getFriendByParticipantId(filter, options);
@@ -46,6 +46,32 @@ const getAllFriends = async (req, res) => {
   }
 }
 
+const updateFriendStatus = async (req, res) => {
+  try{
+    if(req.body.userRole!=='user'){
+      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'friend', message: req.t('unauthorised') }));
+    }
+    const friend = await getFriendById(req.params.id);
+    getFriendByParticipants([req.body.userId, req.body.participantId]);
+    if(!friend){
+      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'friend', message: req.t('friend-not-found') }));
+    }
+    const {status} = req.body;
+    if(status!=='accepted' && status!=='rejected'){
+      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'friend', message: req.t('invalid-status') }));
+    }
+    const updatedFriend = await updateFriend(friend._id, {
+      status: req.body.status
+    });
+    return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'friend', message: req.t('friend-updated'), data: updatedFriend }));
+  }
+  catch(error){
+    console.error(error);
+    logger.error(error.message, req.originalUrl);
+    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'friend', message: req.t('server-error') }));
+  }
+}
 
 
-module.exports = { getAllFriends, makeFriend }
+
+module.exports = { getAllFriends, makeFriend, updateFriendStatus }

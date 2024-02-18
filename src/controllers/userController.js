@@ -11,6 +11,14 @@ const { addNotification } = require('../services/notificationService');
 const { addToken, verifyToken, deleteToken } = require('../services/tokenService');
 const emailWithNodemailer = require('../helpers/email');
 const crypto = require('crypto');
+const { getFriendByParticipants, deleteFriendByUserId } = require('../services/frinedService');
+const { deleteChatByUserId } = require('../services/chatService');
+const { deleteDiscussion, deleteDiscussionByUserId } = require('../services/discussionService');
+const { deleteDislikeByUserId } = require('../services/dislikeService');
+const { deleteDiscussionById } = require('./discussionController');
+const { deleteLikeByUserId } = require('../services/likeService');
+const { deleteMessageByUserId } = require('../services/messageService');
+const { deletePaymentInfoByUserId } = require('../services/paymentService');
 
 function validatePassword(password) {
   const hasNumber = /\d/.test(password);
@@ -297,7 +305,7 @@ const getUsers = async (req, res) => {
         { phoneNumber: searchRegExp },
       ]
     }
-    if(subscription){
+    if (subscription) {
       filter.subscription = subscription;
     }
     const options = { page, limit };
@@ -347,6 +355,26 @@ const userDetails = async (req, res) => {
     const id = req.params.id;
     const userDetails = await getUserById(id);
     return res.status(200).json(response({ statusCode: '200', message: req.t('user-details'), data: userDetails, status: "OK" }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
+  }
+}
+
+const getProfileDetails = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const userDetails = await getUserById(id);
+    const profileDetails = [userDetails._id, req.body.userId]
+    const frinedStatus = await getFriendByParticipants(profileDetails);
+    console.log(frinedStatus)
+    var friendRequestStatus = "rejected";
+    if (frinedStatus) {
+      friendRequestStatus = frinedStatus.status;
+    }
+    return res.status(200).json(response({ statusCode: '2000', message: req.t('user-details'), data: { userDetails, friendRequestStatus }, status: "OK" }));
   }
   catch (error) {
     console.error(error);
@@ -646,4 +674,29 @@ const deleteUserByAdmin = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin }
+const deleteAccount = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await login(req.body.userEmail, password);
+    if (!user) {
+      return res.status(400).json(response({ statusCode: '400', message: req.t('password-invalid'), status: "Error" }));
+    }
+    await deleteUser(user._id);
+    await deleteChatByUserId(user._id);
+    await deleteDiscussionByUserId(user._id);
+    await deleteDislikeByUserId(user._id);
+    await deleteFriendByUserId(user._id);
+    await deleteLikeByUserId(user._id);
+    await deleteMessageByUserId(user._id);
+    await deletePaymentInfoByUserId(user._id);
+
+    return res.status(200).json(response({ statusCode: '200', message: req.t('user-deleted'), status: "OK" }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
+  }
+}
+
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteAccount }

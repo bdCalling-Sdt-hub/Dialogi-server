@@ -117,7 +117,7 @@ const getAllQuestions = async (filter, options) => {
               likes: 1,
               dislikes: 1,
               discussion: 1,
-              user: { fullName: "$user.fullName", image: "$user.image" }
+              user: { fullName: "$user.fullName", image: "$user.image", _id: "$user._id" }
             }
           },
           { $skip: discussionSkip },

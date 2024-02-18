@@ -145,9 +145,15 @@ const getChatByParticipantId = async (filters, options) => {
   return {chatList, pagination};
 }
 
+const deleteChatByUserId = async (userId) => {
+  const chat = await Chat.deleteMany({ participants: { $in: [userId] } });
+  return chat;
+}
+
 
 module.exports = {
   addChat,
   getChatByParticipants,
-  getChatByParticipantId
+  getChatByParticipantId,
+  deleteChatByUserId
 }
