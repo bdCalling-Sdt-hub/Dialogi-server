@@ -5,7 +5,7 @@ require('dotenv').config();
 //defining unlinking image function 
 const unlinkImage = require('../common/image/unlinkImage')
 const logger = require("../helpers/logger");
-const { addUser, login, getUserByEmail, getAllUsers, getUserById, loginWithPasscode, deleteUser } = require('../services/userService')
+const { addUser, login, getUserByEmail, getAllUsers, getUserById, loginWithPasscode, deleteAccount } = require('../services/userService')
 const { sendOTP, checkOTPByEmail, verifyOTP } = require('../services/otpService');
 const { addNotification } = require('../services/notificationService');
 const { addToken, verifyToken, deleteToken } = require('../services/tokenService');
@@ -674,14 +674,14 @@ const deleteUserByAdmin = async (req, res) => {
   }
 }
 
-const deleteAccount = async (req, res) => {
+const deleteUserAccount = async (req, res) => {
   try {
     const { password } = req.body;
     const user = await login(req.body.userEmail, password);
     if (!user) {
       return res.status(400).json(response({ statusCode: '400', message: req.t('password-invalid'), status: "Error" }));
     }
-    await deleteUser(user._id);
+    await deleteAccount(user._id);
     await deleteChatByUserId(user._id);
     await deleteDiscussionByUserId(user._id);
     await deleteDislikeByUserId(user._id);
@@ -699,4 +699,4 @@ const deleteAccount = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteAccount }
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount }

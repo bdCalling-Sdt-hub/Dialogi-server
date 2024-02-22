@@ -17,4 +17,4 @@ function unlinkImage(imagePaths) {
   });
 }
 
-module.exports = { unlinkImage };
+module.exports = unlinkImage;

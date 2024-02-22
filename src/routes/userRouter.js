@@ -1,5 +1,5 @@
 const express = require('express');
-const { signUp, signIn, getUsers, userDetails, forgetPassword, verifyForgetPasswordOTP, resetPassword, changePassword, blockUser, unBlockUser, signInWithRefreshToken, updateProfile, getProfileDetails, deleteAccount } = require('../controllers/userController');
+const { signUp, signIn, getUsers, userDetails, forgetPassword, verifyForgetPasswordOTP, resetPassword, changePassword, blockUser, unBlockUser, signInWithRefreshToken, updateProfile, getProfileDetails, deleteUserAccount } = require('../controllers/userController');
 const router = express.Router();
 const fs = require('fs');
 const userFileUploadMiddleware = require("../middlewares/fileUpload");
@@ -37,6 +37,6 @@ router.patch('/unblock-user/:id', isValidUser, unBlockUser);
 router.get('/:id', isValidUser, userDetails);
 router.patch('/change-password', isValidUser, changePassword);
 router.put('/', [uploadUsers.single("image")], isValidUser, updateProfile);
-router.delete('/', isValidUser, deleteAccount);
+router.delete('/', isValidUser, deleteUserAccount);
 
 module.exports = router;

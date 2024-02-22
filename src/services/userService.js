@@ -41,6 +41,16 @@ const login = async (email, password) => {
   return user;
 }
 
+const deleteAccount = async (userId) => {
+  try{
+    return await User.findByIdAndDelete(userId);
+  }
+  catch(error){
+    throw error;
+  }
+
+}
+
 const updateUser = async (userId,userbody) => {
   try{
     return await User.findByIdAndUpdate(userId, userbody, { new: true });
@@ -60,5 +70,6 @@ module.exports = {
   getUserById,
   updateUser,
   getUserByEmail,
-  getAllUsers
+  getAllUsers,
+  deleteAccount
 }

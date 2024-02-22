@@ -24,6 +24,7 @@ const convertHeicToPngMiddleware = (UPLOADS_FOLDER) => {
 
       // Update file properties
       req.file.filename = pngFileName;
+      req.file.path = pngFilePath;
     }
 
     next();

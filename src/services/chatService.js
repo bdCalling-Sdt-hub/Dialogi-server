@@ -22,128 +22,109 @@ const getChatByParticipants = async (data) => {
   return ndata;
 }
 
+// const getChatByParticipantId = async (filters, options) => {
+//   const page = Number(options.page) || 1;
+//   const limit = Number(options.limit) || 10;
+//   const skip = (page - 1) * limit;
+
+//   const participantId = new mongoose.Types.ObjectId(filters.participantId);
+//   const chatList = await Chat.find({ participants: { $in: [participantId] } }).populate({
+//     path: "participants",
+//     select: "fullName image",
+//     match: { _id: { $ne: participantId } }, // Excluding the receiver from the populated field
+//   }).skip(skip).limit(limit).sort({ createdAt: -1 });
+//   const totalResults = await Chat.countDocuments({ participants: { $in: [participantId] } });
+//   const totalPages = Math.ceil(totalResults / limit);
+//   const pagination = { totalResults, totalPages, currentPage: page, limit };
+
+//   return {chatList, pagination};
+// }
+
 const getChatByParticipantId = async (filters, options) => {
-  const page = Number(options.page) || 1;
-  const limit = Number(options.limit) || 10;
-  const skip = (page - 1) * limit;
+  try {
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 10;
+    const skip = (page - 1) * limit;
 
-  const participantId = new mongoose.Types.ObjectId(filters.participantId);
-  const chatList = await Chat.aggregate([
-    {
-      $match: {
-        participants: {
-          $in: [participantId]
+    const participantId = new mongoose.Types.ObjectId(filters.participantId);
+
+    const chatList = await Chat.aggregate([
+      { $match: { participants: participantId } },
+      {
+        $lookup: {
+          from: "messages",
+          let: { chatId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$chat", "$$chatId"] } } },
+            { $sort: { createdAt: -1 } }, // Sort messages in descending order by createdAt
+            { $limit: 1 },
+            { $project: { message: 1, createdAt: 1 } } // Project only the content and createdAt of the latest message
+          ],
+          as: "latestMessage"
         }
-      }
-    },
-    {
-      $skip: skip
-    },
-    {
-      $limit: limit
-    },
-    {
-      $project: {
-        groupName: {
-          $cond: {
-            if: { $eq: ["$type", "single"] },
-            then: "$groupName",
-            else: null
-          }
-        },
-        participant: {
-          $cond: {
-            if: { $eq: ["$type", "single"] },
-            then: {
-              _id: {
-                $arrayElemAt: [
-                  {
-                    $filter: {
-                      input: "$participants",
-                      as: "participant",
-                      cond: { $ne: ["$$participant", participantId] }
-                    }
-                  },
-                  0
-                ]
+      },
+      { $unwind: { path: "$latestMessage", preserveNullAndEmptyArrays: true } },
+      { $sort: { "latestMessage.createdAt": -1 } }, // Sort chat list based on the createdAt of the latest message
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "users",
+          localField: "participants",
+          foreignField: "_id",
+          as: "participants"
+        }
+      },
+      {
+        $addFields: {
+          participants: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$participants",
+                  as: "participant",
+                  cond: { $ne: ["$$participant._id", participantId] }
+                }
               },
-              fullName: {
-                $arrayElemAt: [
-                  {
-                    $filter: {
-                      input: "$participants.fullName",
-                      as: "participant",
-                      cond: { $ne: ["$$participant._id", participantId] }
-                    }
-                  },
-                  0
-                ]
-              },
-              image: {
-                $arrayElemAt: [
-                  {
-                    $filter: {
-                      input: "$participants.image",
-                      as: "participant",
-                      cond: { $ne: ["$$participant._id", participantId] }
-                    }
-                  },
-                  0
-                ]
+              as: "participant",
+              in: {
+                _id: "$$participant._id",
+                fullName: "$$participant.fullName",
+                image: "$$participant.image"
               }
-            },
-            else: null
-          }
-        },
-        type: 1,
-        groupAdmin: 1,
-        image: 1,
-        // createdAt: 1,
-        // updatedAt: 1
-      }
-    },
-    {
-      $lookup: {
-        from: "users", // Assuming your user collection name is "users"
-        localField: "participant._id",
-        foreignField: "_id",
-        as: "participantDetails"
-      }
-    },
-    {
-      $addFields: {
-        participant: {
-          $mergeObjects: [
-            "$participant",
-            {
-              $arrayElemAt: ["$participantDetails", 0]
             }
-          ]
+          }
+        }
+      },
+      {
+        $project: {
+          latestMessage: 1,
+          groupName: 1,
+          type: 1,
+          groupAdmin: 1,
+          image: 1,
+          participants: 1
         }
       }
-    },
-    {
-      $project: {
-        groupName: 1,
-        "participant.fullName": 1,
-        "participant.image": 1,
-        type: 1,
-        groupAdmin: 1,
-        image: 1,
-        // createdAt: 1,
-        // updatedAt: 1
-      }
-    },
-    {
-      $unset: "participantDetails"
-    }
-  ]);
-  const totalResults = await Chat.countDocuments({ participants: { $in: [participantId] } });
-  const totalPages = Math.ceil(totalResults / limit);
-  const pagination = { totalResults, totalPages, currentPage: page, limit };
+    ]);
 
-  return {chatList, pagination};
+    const totalResults = await Chat.countDocuments({ participants: participantId });
+    const totalPages = Math.ceil(totalResults / limit);
+    const pagination = { totalResults, totalPages, currentPage: page, limit };
+
+    return { chatList, pagination };
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+
+
+const getChatById = async (chatId) => {
+  return await Chat.findById(chatId);
 }
+
 
 const deleteChatByUserId = async (userId) => {
   const chat = await Chat.deleteMany({ participants: { $in: [userId] } });
@@ -155,5 +136,6 @@ module.exports = {
   addChat,
   getChatByParticipants,
   getChatByParticipantId,
-  deleteChatByUserId
+  deleteChatByUserId,
+  getChatById
 }

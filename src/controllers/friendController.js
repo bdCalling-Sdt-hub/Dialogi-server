@@ -33,7 +33,7 @@ const getAllFriends = async (req, res) => {
     const { page, limit, status } = req.query;
     const options = { page, limit };
     const filter = {
-      participants: { $in: [req.body.userId] },
+      participantId: req.body.userId,
       status: !status ? 'accepted' : status
     };
     const friends = await getFriendByParticipantId(filter, options);

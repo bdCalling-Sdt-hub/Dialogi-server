@@ -28,12 +28,22 @@ const getFriendByParticipantId = async (filters, options) => {
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
-
+  console.log(filters);
   // Aggregation pipeline to get friends where the user is not req.body.userId
-  const friendList = await Friend.find(filters).select('participants status createdAt').populate('participants', 'fullName image').skip(skip).limit(limit).sort({ createdAt: -1 });
+  const friendList = await Friend.find({
+    participants: { $in: [filters.participantId] },
+    status: filters.status
+  }).select('participants status createdAt').populate({
+    path: "participants",
+    select: "fullName image",
+    match: { _id: { $ne: filters.participantId } }, // Excluding the receiver from the populated field
+  }).skip(skip).limit(limit).sort({ createdAt: -1 });
 
   // Count total results
-  const totalResults = await Friend.countDocuments(filters);
+  const totalResults = await Friend.countDocuments({
+    participants: { $in: [filters.participantId] },
+    status: filters.status
+  });
 
   // Calculate total pages
   const totalPages = Math.ceil(totalResults / limit);
@@ -43,11 +53,11 @@ const getFriendByParticipantId = async (filters, options) => {
 };
 
 const deleteFriendByUserId = async (userId) => {
-  return await Friend.deleteMany({ participants: {$in: [userId]} });
+  return await Friend.deleteMany({ participants: { $in: [userId] } });
 }
 
 const updateFriend = async (friendId, friendBody) => {
-  return await Friend.findByIdAndUpdate(friendId, friendBody, {new: true});
+  return await Friend.findByIdAndUpdate(friendId, friendBody, { new: true });
 }
 
 module.exports = {

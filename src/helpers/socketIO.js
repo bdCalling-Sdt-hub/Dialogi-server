@@ -1,4 +1,4 @@
-const { addChat, getChatByParticipants } = require('../services/chatService');
+const { addChat, getChatByParticipants, getChatById, getChatByParticipantId } = require('../services/chatService');
 const { addMessage, getMessageByChatId } = require('../services/messageService');
 const logger = require('../helpers/logger');
 const jwt = require('jsonwebtoken');
@@ -8,27 +8,27 @@ require('dotenv').config();
 
 const socketIO = (io) => {
 
-  io.use((socket, next) => {
-    const token = socket.handshake.headers.authorization;
-    if (!token) {
-      return next(new Error('Authentication error: Token not provided.'));
-    }
+  // io.use((socket, next) => {
+  //   const token = socket.handshake.headers.authorization;
+  //   if (!token) {
+  //     return next(new Error('Authentication error: Token not provided.'));
+  //   }
 
-    // Extract the token from the Authorization header
-    const tokenParts = token.split(' ');
-    const tokenValue = tokenParts[1];
+  //   // Extract the token from the Authorization header
+  //   const tokenParts = token.split(' ');
+  //   const tokenValue = tokenParts[1];
 
-    // Verify the token
-    jwt.verify(tokenValue, process.env.JWT_ACCESS_TOKEN, (err, decoded) => {
-      if (err) {
-        console.error(err);
-        return next(new Error('Authentication error: Invalid token.'));
-      }
-      // Attach the decoded token to the socket object for further use
-      socket.decodedToken = decoded;
-      next();
-    });
-  });
+  //   // Verify the token
+  //   jwt.verify(tokenValue, process.env.JWT_ACCESS_TOKEN, (err, decoded) => {
+  //     if (err) {
+  //       console.error(err);
+  //       return next(new Error('Authentication error: Invalid token.'));
+  //     }
+  //     // Attach the decoded token to the socket object for further use
+  //     socket.decodedToken = decoded;
+  //     next();
+  //   });
+  // });
 
   io.on('connection', (socket) => {
     //console.log(`ID: ${socket.id} just connected`);
@@ -92,7 +92,7 @@ const socketIO = (io) => {
     });
 
     socket.on("add-new-chat", async (data, callback) => {
-      if (socket.decodedToken.subscription === 'default') {
+      if (socket.data.subscription === 'default') {
         return callback({
           status: "Error",
           message: "You must have premium plus subscription to enjoy chat feature",
@@ -147,7 +147,7 @@ const socketIO = (io) => {
     });
 
     socket.on("add-new-message", async (data, callback) => {
-      if (socket.decodedToken.subscription === 'default') {
+      if (socket.data.subscription === 'default') {
         return callback({
           status: "Error",
           message: "You must have premium plus subscription to enjoy chat feature",
@@ -155,24 +155,18 @@ const socketIO = (io) => {
         });
       }
       try {
-
         const message = await addMessage(data);
-
-        // const myChat = await chatService.getChatById(message.chat);
-
-        // const roomID = (myChat.participants[0] === data?.sender ? myChat.participants[1] : myChat.participants[0]).toString();
-
-        // const chats = await chatService.getChats(
-        //   data?.filter,
-        //   data?.options,
-        //   data?.userId
-        // );
-
-        // io.to("room" + message.chat).emit("chat-list", chats);
-
-        const roomIDs = message?.chat?.participants?.map(participant => 'chat-notification::' + participant.toString()) || [];
-        console.log('roomIDs--->', roomIDs, message?.chat?.participants);
-        io.emit(roomIDs, message);
+        const eventName = 'new-message::'+data.chat.toString();
+        socket.broadcast.emit(eventName, message);
+        const chat = await getChatById(data.chat);
+        if(chat && chat.type === "single"){
+          const eventName1 = 'update-chatlist::'+chat.participants[0].toString();
+          const eventName2 = 'update-chatlist::'+chat.participants[1].toString();
+          const chatListforUser1 = await getChatByParticipantId({participantId: chat.participants[0]}, {page: 1, limit: 10});
+          const chatListforUser2 = await getChatByParticipantId({participantId: chat.participants[1]}, {page: 1, limit: 10});
+          socket.emit(eventName1, chatListforUser1);  
+          socket.emit(eventName2, chatListforUser2);
+        }
         callback({
           status: "Success",
           message: "Message send successfully",

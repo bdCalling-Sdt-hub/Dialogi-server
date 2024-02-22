@@ -5,14 +5,14 @@ const { getMessageByChatId } = require('../services/messageService');
 
 const getAllMessages = async (req, res) => {
   try{
-    const { page, limit } = req.query;
+    const { page, limit, chatId } = req.query;
     const options = { page, limit };
-    const chatId = req.params.chatId;
     const filter = {
-      chat : chatId
+      chat: chatId
     };
-    const chats = await getMessageByChatId(filter, options);
-    return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('chats'), data: chats }));
+    
+    const messages = await getMessageByChatId(filter, options);
+    return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('messages'), data: messages }));
   }
   catch(error){
     console.error(error);
