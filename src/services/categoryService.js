@@ -26,12 +26,48 @@ const getAllCategorys = async (filter, options) => {
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
-  const categoryList = await Category.find({...filter}).skip(skip).limit(limit).sort({createdAt: -1});
-  const totalResults = await Category.countDocuments({...filter});
+  
+  const categoryList = await Category.aggregate([
+    // Match all documents
+    {
+      $match: {}
+    },
+    // Lookup categories from questions
+    {
+      $lookup: {
+        from: 'questions',
+        localField: '_id',
+        foreignField: 'category',
+        as: 'questions'
+      }
+    },
+    // Project necessary fields
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        type: 1,
+        isEarlyAccessAvailable: 1,
+        image: 1,
+        questionCount: { $size: "$questions" }
+      }
+    },
+    // Skip and limit for pagination
+    {
+      $skip: skip
+    },
+    {
+      $limit: limit
+    }
+  ]);
+
+  const totalResults = await Category.countDocuments(filter);
   const totalPages = Math.ceil(totalResults / limit);
-  const pagination = {totalResults, totalPages, currentPage: page, limit};
-  return {categoryList, pagination};
+  const pagination = { totalResults, totalPages, currentPage: page, limit };
+
+  return { categoryList, pagination };
 }
+
 
 const updateCategory = async (categoryId,categorybody) => {
   try{

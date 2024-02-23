@@ -1,7 +1,7 @@
 require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
-const { getFriendByParticipantId, addFriend, getFriendByParticipants, updateFriend, getFriendById } = require('../services/frinedService');
+const { getFriendByParticipantId, addFriend, getFriendByParticipants, updateFriend, getFriendById, getGroupCreateFriendByParticipantId } = require('../services/frinedService');
 
 const makeFriend = async (req, res) => {
   try{
@@ -28,6 +28,23 @@ const makeFriend = async (req, res) => {
   }
 }
 
+const getAllFriendsForGroup = async (req, res) => {
+  try{
+    const { page, limit } = req.query;
+    const options = { page, limit };
+    const filter = {
+      participantId: req.body.userId,
+      status: 'accepted'
+    };
+    const friends = await getGroupCreateFriendByParticipantId(filter, options);
+    return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('friends'), data: friends }));
+  }
+  catch(error){
+    console.error(error);
+    logger.error(error.message, req.originalUrl);
+    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'chat', message: req.t('server-error') }));
+  }
+}
 const getAllFriends = async (req, res) => {
   try{
     const { page, limit, status } = req.query;
@@ -74,4 +91,4 @@ const updateFriendStatus = async (req, res) => {
 
 
 
-module.exports = { getAllFriends, makeFriend, updateFriendStatus }
+module.exports = { getAllFriends, makeFriend, updateFriendStatus, getAllFriendsForGroup }

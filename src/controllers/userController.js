@@ -5,7 +5,7 @@ require('dotenv').config();
 //defining unlinking image function 
 const unlinkImage = require('../common/image/unlinkImage')
 const logger = require("../helpers/logger");
-const { addUser, login, getUserByEmail, getAllUsers, getUserById, loginWithPasscode, deleteAccount } = require('../services/userService')
+const { addUser, login, getUserByEmail, getAllUsers, getUserById, deleteAccount } = require('../services/userService')
 const { sendOTP, checkOTPByEmail, verifyOTP } = require('../services/otpService');
 const { addNotification } = require('../services/notificationService');
 const { addToken, verifyToken, deleteToken } = require('../services/tokenService');
@@ -13,9 +13,8 @@ const emailWithNodemailer = require('../helpers/email');
 const crypto = require('crypto');
 const { getFriendByParticipants, deleteFriendByUserId } = require('../services/frinedService');
 const { deleteChatByUserId } = require('../services/chatService');
-const { deleteDiscussion, deleteDiscussionByUserId } = require('../services/discussionService');
-const { deleteDislikeByUserId } = require('../services/dislikeService');
-const { deleteDiscussionById } = require('./discussionController');
+const { deleteDiscussionByUserId } = require('../services/discussionService');
+const { deleteDislikeByUserId } = require('../services/dislikeService')
 const { deleteLikeByUserId } = require('../services/likeService');
 const { deleteMessageByUserId } = require('../services/messageService');
 const { deletePaymentInfoByUserId } = require('../services/paymentService');
@@ -134,6 +133,29 @@ const signInWithRefreshToken = async (req, res) => {
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
     }
     const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
+  } catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+  }
+};
+
+const signInWithProvider = async (req, res) => {
+  console.log(req.body)
+  try {
+    var user = await getUserByEmail(req.body.email);
+    if(!user){
+      user = {
+        fullName: req.body.fullName,
+        email: req.body.email,
+        role: 'user',
+        subscription: 'default'
+      }
+      user = await addUser(user);
+    }
+    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
   } catch (error) {
     console.error(error);
@@ -291,22 +313,25 @@ const getUsers = async (req, res) => {
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const subscription = req.query.subscription || 'free';
-    const filter = {
-      role: 'user',
-      isBlocked: false
+    const subscription = req.query.subscription;
+    var filter = {
+      role: 'user'
     };
     const search = req.query.search;
     const searchRegExp = new RegExp('.*' + search + '.*', 'i');
     if (search) {
-      filter.$or = [
-        { fullName: searchRegExp },
-        { email: searchRegExp },
-        { phoneNumber: searchRegExp },
-      ]
+      filter = {
+        ...filter,
+        fullName: searchRegExp, 
+        email: searchRegExp, 
+        phoneNumber: searchRegExp
+      }
     }
     if (subscription) {
-      filter.subscription = subscription;
+      filter = {
+        ...filter,
+        subscription: subscription
+      }
     }
     const options = { page, limit };
     const { userList, pagination } = await getAllUsers(filter, options);
@@ -699,4 +724,4 @@ const deleteUserAccount = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount }
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider }

@@ -29,7 +29,7 @@ const getLikeCountByReply = async (replyId) => {
 
 const deleteLike = async (likeId) => {
   try {
-    return Like.findAndDeleteLike(likeId);
+    return Like.findByIdAndDelete(likeId);
   }
   catch (error) {
     throw error;

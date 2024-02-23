@@ -102,7 +102,7 @@ const socketIO = (io) => {
       try {
         var chat;
         if (data?.participants?.length >= 2) {
-          if (data?.type === "group" && socket.decodedToken.subscription !== 'premium-plus') {
+          if (data?.type === "group" && data?.subscription !== 'premium-plus') {
             return callback({
               status: "Error",
               message: "You must have premium plus subscription to create group chat",

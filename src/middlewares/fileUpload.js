@@ -37,7 +37,7 @@ module.exports = function (UPLOADS_FOLDER) {
         cb(null, true);
 
       } else {
-        cb(new Error("Only jpg, png, jpeg format allowed!"));
+        cb(new Error("Only jpg, png, jpeg, heic and heif format allowed!"));
       }
     },
   });

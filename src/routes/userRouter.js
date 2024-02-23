@@ -1,5 +1,5 @@
 const express = require('express');
-const { signUp, signIn, getUsers, userDetails, forgetPassword, verifyForgetPasswordOTP, resetPassword, changePassword, blockUser, unBlockUser, signInWithRefreshToken, updateProfile, getProfileDetails, deleteUserAccount } = require('../controllers/userController');
+const { signUp, signIn, getUsers, userDetails, forgetPassword, verifyForgetPasswordOTP, resetPassword, changePassword, blockUser, unBlockUser, signInWithRefreshToken, updateProfile, getProfileDetails, deleteUserAccount, signInWithProvider } = require('../controllers/userController');
 const router = express.Router();
 const fs = require('fs');
 const userFileUploadMiddleware = require("../middlewares/fileUpload");
@@ -27,6 +27,7 @@ if (!fs.existsSync(UPLOADS_FOLDER_USERS)) {
 router.post('/sign-up', [uploadUsers.single("image")], convertHeicToPng(UPLOADS_FOLDER_USERS), validationMiddleware, signUp);
 router.post('/sign-in', signIn);
 router.get('/sign-in-with-refresh-token', verifyRefreshToken, signInWithRefreshToken);
+router.post('/sign-in-with-provider', signInWithProvider);
 router.post('/forget-password', forgetPassword);
 router.post('/verify-otp', verifyForgetPasswordOTP);
 router.post('/reset-password', resetPassword);
