@@ -26,12 +26,12 @@ const getAllSubCategories = async (filter, options) => {
     // Aggregate pipeline to get subcategories with count
     const aggregationPipeline = [
       { $match: { category: category } },
-      { $group: { _id: { subCategory: '$subCategory', _id: '$_id' }, count: { $sum: 1 } } },
-      { $project: { _id: 0, subCategory: '$_id.subCategory', _id: '$_id._id', count: 1 } }, // Project to reshape documents
+      { $group: { _id: { subCategory: '$subCategory' }, count: { $sum: 1 } } },
+      { $project: { _id: 0, subCategory: '$_id.subCategory', count: 1 } }, // Project to reshape documents
       { $skip: skip },
       { $limit: limit }
     ];
-
+    
     // Execute aggregation pipeline
     const subCategoryList = await Question.aggregate(aggregationPipeline);
 
@@ -117,6 +117,7 @@ const getAllQuestions = async (filter, options) => {
               likes: 1,
               dislikes: 1,
               discussion: 1,
+              createdAt: 1,
               user: { fullName: "$user.fullName", image: "$user.image", _id: "$user._id" }
             }
           },
@@ -141,11 +142,11 @@ const getAllQuestions = async (filter, options) => {
   const pagination = { totalResults, totalPages, currentPage: page, limit:questionlimit };
 
   // Calculate pagination for discussions for each question
-  const discussionPagination = [];
+  var discussionPagination = {};
   for (const question of questions) {
     const totalDiscussionResults = await Discussion.countDocuments({ question: question._id });
     const totalDiscussionPages = Math.ceil(totalDiscussionResults / discussionLimit);
-    discussionPagination.push({ totalResults: totalDiscussionResults, totalPages: totalDiscussionPages, currentPage: discussionPage, limit: discussionLimit });
+    discussionPagination = { totalResults: totalDiscussionResults, totalPages: totalDiscussionPages, currentPage: discussionPage, limit: discussionLimit };
   }
 
   return {questions, pagination, discussionPagination};

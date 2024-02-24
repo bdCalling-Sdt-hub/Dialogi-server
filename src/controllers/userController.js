@@ -575,7 +575,6 @@ const updateProfile = async (req, res) => {
     user.address = !address ? user.address : address;
     if (req.file) {
       const defaultPath = '/uploads/users/user.png';
-      console.log('req.file', req.file, user.image.path, defaultPath);
       if (user.image !== defaultPath) {
         unlinkImage(user.image);
       }

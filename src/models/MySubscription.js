@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const subscriptionSchema = new mongoose.Schema({
-  name: { type: String, required: false },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: { type: String, enum: ["default", "premium", "premium-plus"], required: false },
 
   //show add
@@ -27,7 +27,6 @@ const subscriptionSchema = new mongoose.Schema({
   updateProfileAccess: { type: Boolean, default: false },
 
   price: { type: Number, default: 0 },
-
   expiryDate: { type: Date, required: false },
 }, { timestamps: true }
 );

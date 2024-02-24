@@ -103,7 +103,6 @@ const getDiscussionDetails = async (req, res) => {
   try{
     const {page, limit} = req.query;
     const options = { page, limit };
-
     const discussion = await getDiscussionWithReplies(req.params.id, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'discussion', message: req.t('discussion-details'), data: discussion }));
   }

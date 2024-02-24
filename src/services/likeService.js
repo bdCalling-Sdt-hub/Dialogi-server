@@ -16,7 +16,12 @@ const upgradeLike = async (likeBody) => {
 }
 
 const getLikeByUserAndType = async (likeBody) => {
-  return await Like.findOne({ user: likeBody.user, type: likeBody.type });
+  if(likeBody.type === 'discussion'){
+    return await Like.findOne({ user: likeBody.user, discussion: likeBody.discussion,type: likeBody.type });
+  }
+  else{
+    return await Like.findOne({ user: likeBody.user, reply: likeBody.reply,type: likeBody.type });
+  }
 }
 
 const getLikeCountByDiscussion = async (discussionId) => {

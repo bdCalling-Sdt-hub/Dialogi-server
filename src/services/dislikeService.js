@@ -5,18 +5,23 @@ const upgradeDislike = async (dislikeBody) => {
     var dislike = await getDislikeByUserAndType(dislikeBody);
     if (dislike) {
       await deleteDislike(dislike._id);
-      return { message: 'Dislike removed' };
+      return { message: 'Dislike removed', data: dislike};
     }
     dislike = new Dislike(dislikeBody);
-    await dislike.save();
-    return { message: 'Disliked successfully' };
+    const dislikeData = await dislike.save();
+    return { message: 'Disliked successfully', data: dislikeData };
   } catch (error) {
     throw error;
   }
 }
 
 const getDislikeByUserAndType = async (dislikeBody) => {
-  return await Dislike.findOne({ user: dislikeBody.user, type: dislikeBody.type });
+  if(dislikeBody.type === 'discussion'){
+    return await Dislike.findOne({ user: dislikeBody.user, discussion: dislikeBody.discussion,type: dislikeBody.type });
+  }
+  else{
+    return await Dislike.findOne({ user: dislikeBody.user, reply: dislikeBody.reply,type: dislikeBody.type });
+  }
 }
 
 const getDislikeCountByDiscussion = async (discussionId) => {
@@ -29,7 +34,7 @@ const getDislikeCountByReply = async (replyId) => {
 
 const deleteDislike = async (dislikeId) => {
   try {
-    return Dislike.findAndDeleteDislike(dislikeId);
+    return Dislike.findByIdAndDelete(dislikeId);
   }
   catch (error) {
     throw error;

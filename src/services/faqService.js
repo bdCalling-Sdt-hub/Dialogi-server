@@ -35,7 +35,17 @@ const getFaqs = async () => {
   }
 }
 
+const deleteAFaq = async (faqId) => {
+  try {
+    return await Faq.findByIdAndDelete(faqId);
+  }
+  catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   addFaq,
-  getFaqs
+  getFaqs,
+  deleteAFaq
 }

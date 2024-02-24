@@ -169,7 +169,7 @@ const getDiscussionWithReplies = async (discussionId, options) => {
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const discussion = await Discussion.findById(discussionId).select('discussion likes dislikes user').populate('user', 'fullName image');
+  const discussion = await Discussion.findById(discussionId).select('discussion likes dislikes user createdAt').populate('user', 'fullName image');
 
   if (!discussion) {
     return null;
@@ -195,7 +195,8 @@ const getDiscussionWithReplies = async (discussionId, options) => {
       _id: reply.user._id
     },
     likes: reply.likes,
-    dislikes: reply.dislikes
+    dislikes: reply.dislikes,
+    createdAt: reply.createdAt
   }));
 
   const formattedDiscussion = {
@@ -205,6 +206,7 @@ const getDiscussionWithReplies = async (discussionId, options) => {
     likes: discussion.likes,
     dislikes: discussion.dislikes,
     replies: formattedReplies,
+    createdAt: discussion.createdAt
   };
 
   return { discussion: formattedDiscussion, pagination };
@@ -237,6 +239,10 @@ const deleteDiscussionByUserId = async (userId) => {
   }
 }
 
+const getReplyById = async (id) => {
+  return await Reply.findById(id);
+}
+
 module.exports = {
   addDiscussion,
   getDiscussionById,
@@ -246,5 +252,6 @@ module.exports = {
   getAllReplies,
   addReply,
   getDiscussionWithReplies,
-  deleteDiscussionByUserId
+  deleteDiscussionByUserId,
+  getReplyById
 }

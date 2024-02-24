@@ -23,6 +23,7 @@ const usersData = [
 
 const subscriptionData = [
   {
+    _id: "65cde4e7294393c969cff434",
     name: "Default",
     type: "default",
     isAddAvailable: true,
@@ -50,6 +51,7 @@ const subscriptionData = [
     price: 0,
   },
   {
+    _id: "65cde4e7294393c969cff435",
     name: "Premium",
     type: "premium",
     isAddAvailable: false,
@@ -77,6 +79,7 @@ const subscriptionData = [
     price: 1.5,
   },
   {
+    _id: "65cde4e7294393c969cff436",
     name: "Premium Plus",
     type: "premium-plus",
     isAddAvailable: false,

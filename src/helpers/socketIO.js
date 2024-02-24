@@ -4,6 +4,7 @@ const logger = require('../helpers/logger');
 const jwt = require('jsonwebtoken');
 const { upgradeLike, getLikeCountByDiscussion } = require('../services/likeService');
 const { upgradeDislike, getDislikeCountByDiscussion } = require('../services/dislikeService');
+const { getDiscussionById, getReplyById } = require('../services/discussionService');
 require('dotenv').config();
 
 const socketIO = (io) => {
@@ -49,11 +50,13 @@ const socketIO = (io) => {
         const like = await upgradeLike(data);
         const count = await getLikeCountByDiscussion(data.discussion);
         if (data.type === "discussion") {
-          const roomID = 'discussion-like-notification::' + like.data._id;
-          io.emit(roomID, { status: "Success", message: "Liked", data: count });
+          const discussion = await getDiscussionById(data.discussion);
+          discussion.likes = count;
+          await discussion.save();
         } if (data.type === "reply") {
-          const roomID = 'reply-like-notification::' + like.data._id;
-          io.emit(roomID, { status: "Success", message: "Liked", data: count });
+          const reply = await getReplyById(data.reply);
+          reply.likes = count;
+          await reply.save();
         }
         callback({
           status: "OK",
@@ -69,20 +72,22 @@ const socketIO = (io) => {
 
     socket.on("dialogi-dislike", async (data, callback) => {
       try {
-        console.log('someone likes--->', data);
-        const like = await upgradeDislike(data);
-        const count = await getDislikeCountByDiscussion(data.discussion);
+        console.log('someone dislikes--->', data);
+        const dislike = await upgradeDislike(data);
+        const count = await getLikeCountByDiscussion(data.discussion);
         if (data.type === "discussion") {
-          const roomID = 'discussion-dislike-notification::' + like.data._id;
-          io.emit(roomID, { status: "Success", message: "Liked", data: count });
+          const discussion = await getDiscussionById(data.discussion);
+          discussion.dislikes = count;
+          await discussion.save();
         } if (data.type === "reply") {
-          const roomID = 'reply-dislike-notification::' + like.data._id;
-          io.emit(roomID, { status: "Success", message: "Liked", data: count });
+          const reply = await getReplyById(data.reply);
+          reply.dislikes = count;
+          await reply.save();
         }
         callback({
           status: "OK",
-          message: like.message,
-          data: like.data
+          message: dislike.message,
+          data: dislike.data
         });
       }
       catch(error){
