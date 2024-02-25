@@ -152,6 +152,17 @@ const getAllQuestions = async (filter, options) => {
   return {questions, pagination, discussionPagination};
 };
 
+const getSubCategoryBySubCatName = async (filters, options) => {
+  const limit = Number(options.limit) || 10;
+  try {
+    const subCategoryList = await Question.find(filters).limit(limit).select('subCategory');
+    return subCategoryList;
+  } catch (error) {
+    throw error;
+  }
+
+}
+
 
 const updateQuestion = async (questionId, questionbody) => {
   try {
@@ -178,5 +189,6 @@ module.exports = {
   getQuestionByQuestionAndSubCategory,
   getAllQuestions,
   deleteQuestion,
-  getAllSubCategories
+  getAllSubCategories,
+  getSubCategoryBySubCatName
 }

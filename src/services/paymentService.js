@@ -4,7 +4,7 @@ const addPayment = async (paymentBody) => {
   try {
     var payment = new Payment(paymentBody);
     await payment.save();
-    return payment.populate({ path: 'subscription', select: 'type' });
+    return payment;
   } catch (error) {
     throw error;
   }

@@ -10,7 +10,8 @@ const usersData = [
     "email": "admin.dialogi@gmail.com",
     "phoneNumber": "01735566789",
     "password": 'helloadmin',
-    "role": "admin"
+    "role": "admin",
+    "subscription":"default"
   },
   {
     "fullName": "Testing Clinet",
@@ -18,6 +19,7 @@ const usersData = [
     "phoneNumber": "01734456873",
     "password": 'helloclient',
     "role": "user",
+    "subscription":"default"
   }
 ];
 
@@ -47,6 +49,9 @@ const subscriptionData = [
     //profile update access
     updateProfileAccess: false,
 
+    //expiry time
+    expiryTime:1,
+
     //price
     price: 0,
   },
@@ -57,7 +62,7 @@ const subscriptionData = [
     isAddAvailable: false,
 
     //category access
-    categoryAccessNumber: 0,
+    categoryAccessNumber: 111,
     isCategoryAccessUnlimited: true,
 
     //question access
@@ -75,6 +80,9 @@ const subscriptionData = [
     //profile update access
     updateProfileAccess: false,
 
+    //expiry time
+    expiryTime:1,
+
     //price
     price: 1.5,
   },
@@ -85,11 +93,11 @@ const subscriptionData = [
     isAddAvailable: false,
 
     //category access
-    categoryAccessNumber: 0,
+    categoryAccessNumber: 111,
     isCategoryAccessUnlimited: true,
 
     //question access
-    questionAccessNumber: 0,
+    questionAccessNumber: 111,
     isQuestionAccessUnlimited: true,
 
     //chat access
@@ -102,6 +110,9 @@ const subscriptionData = [
 
     //profile update access
     updateProfileAccess: true,
+
+    //expiry time
+    expiryTime:1,
 
     //price
     price: 2.5,

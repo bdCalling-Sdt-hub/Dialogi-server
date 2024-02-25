@@ -28,7 +28,7 @@ const subscriptionSchema = new mongoose.Schema({
 
   price: { type: Number, default: 0 },
 
-  expiryDate: { type: Date, required: false },
+  expiryTime: { type: Number, dafault: 1 },
 }, { timestamps: true }
 );
 

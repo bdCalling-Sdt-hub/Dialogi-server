@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 const { upgradeLike, getLikeCountByDiscussion } = require('../services/likeService');
 const { upgradeDislike, getDislikeCountByDiscussion } = require('../services/dislikeService');
 const { getDiscussionById, getReplyById } = require('../services/discussionService');
+const { getMySubscriptionById, getMySubscriptionByUserId, addMySubscription, updateMySubscription, addDefaultSubscription } = require('../services/mySubscriptionService');
+const { getUserById } = require('../services/userService');
+const { getSubscriptionById } = require('../services/subscriptionService');
 require('dotenv').config();
 
 const socketIO = (io) => {
@@ -44,9 +47,87 @@ const socketIO = (io) => {
       }
     });
 
+    socket.on("dialogi-access-status", async (data, callback) => {
+      try {
+        if (data?.userId) {
+          const mySubscription = await getMySubscriptionByUserId(data.userId);
+          if (!mySubscription) {
+            const mydefSub = await addDefaultSubscription(data.userId);
+            return callback({ status: "Added", message: "Default subscription added to account", data: mydefSub });
+          }
+
+          if (mySubscription && mySubscription.type === 'default') {
+            return callback({ status: "Default", message: "To access all activities, update subscription", data: mySubscription });
+          }
+          if (mySubscription && mySubscription.type !== 'default' && (new Date(new Date().setMonth(new Date().getMonth() + mySubscription.expiryTime)) > new Date())) {
+            return callback({ status: "Success", message: "Subscription", data: mySubscription });
+          }
+          if (mySubscription && mySubscription.type !== 'default' && (new Date(new Date().setMonth(new Date().getMonth() + mySubscription.expiryTime)) < new Date())) {
+            const mydefSub = await addDefaultSubscription(data.userId);
+            return callback({ status: "Expired", message: "Your subscription expired", data: mydefSub });
+          }
+        }
+        else {
+          return callback({ status: "Error", message: "Must provide a valid user id", data: null });
+        }
+      }
+      catch (error) {
+        console.error("Error getting subscription:", error.message);
+        logger.error(error.message, "socket -> access-status");
+        callback({ status: "Error", message: error.message, data: null });
+      }
+    });
+
+    socket.on("dialogi-content-access", async (data, callback) => {
+      try {
+        if (data.userId && data.type) {
+          var mySubscription = await getMySubscriptionByUserId(data.userId);
+          if (!mySubscription) {
+            mySubscription = await addDefaultSubscription(data.userId);
+          }
+          if (data.type === "category") {
+            if (mySubscription.isCategoryAccessUnlimited && (new Date(new Date().setMonth(new Date().getMonth() + mySubscription.expiryTime)) > new Date())) {
+              return callback({ status: "Unlimited", message: "Category access granted", data: mySubscription });
+            }
+            else if (!mySubscription.isCategoryAccessUnlimited && mySubscription.categoryAccessNumber > 0 && (new Date(new Date().setMonth(new Date().getMonth() + mySubscription.expiryTime)) > new Date())) {
+              mySubscription.categoryAccessNumber = mySubscription.categoryAccessNumber - 1;
+              await updateMySubscription(mySubscription._id, mySubscription);
+              return callback({ status: "Success", message: "Category access granted", data: mySubscription });
+            }
+            else{
+              return callback({ status: "Expired", message: "Your subscription expired", data: mySubscription });
+            }
+          }
+          if (data.type === "question") {
+            if (mySubscription.isQuestionAccessUnlimited && (new Date(new Date().setMonth(new Date().getMonth() + mySubscription.expiryTime)) > new Date())) {
+              return callback({ status: "Unlimited", message: "Category access granted", data: mySubscription });
+            }
+            else if (!mySubscription.isQuestionAccessUnlimited && mySubscription.questionAccessNumber > 0 && (new Date(new Date().setMonth(new Date().getMonth() + mySubscription.expiryTime)) > new Date())) {
+              mySubscription.questionAccessNumber = mySubscription.questionAccessNumber - 1;
+              await updateMySubscription(mySubscription._id, mySubscription);
+              return callback({ status: "Success", message: "Category access granted", data: mySubscription });
+            }
+            else{
+              return callback({ status: "Expired", message: "Your subscription expired", data: mySubscription });
+            }
+          }
+          else{
+            return callback({ status: "Error", message: "Invalid type", data: null });
+          }
+        }
+        else {
+          return callback({ status: "Error", message: "User Id and Type is required", data: null });
+        }
+      }
+      catch(error) {
+        console.error("Error getting subscription:", error.message);
+        logger.error(error.message, "socket -> access-status");
+        return callback({ status: "Error", message: error.message, data: null });
+      }
+    });
+
     socket.on("dialogi-like", async (data, callback) => {
       try {
-        console.log('someone likes--->', data);
         const like = await upgradeLike(data);
         const count = await getLikeCountByDiscussion(data.discussion);
         if (data.type === "discussion") {
@@ -64,7 +145,7 @@ const socketIO = (io) => {
           data: like.data
         });
       }
-      catch(error){
+      catch (error) {
         console.error("Error liking:", error.message);
         callback({ status: "Error", message: error.message, data: null });
       }
@@ -72,7 +153,6 @@ const socketIO = (io) => {
 
     socket.on("dialogi-dislike", async (data, callback) => {
       try {
-        console.log('someone dislikes--->', data);
         const dislike = await upgradeDislike(data);
         const count = await getLikeCountByDiscussion(data.discussion);
         if (data.type === "discussion") {
@@ -90,7 +170,7 @@ const socketIO = (io) => {
           data: dislike.data
         });
       }
-      catch(error){
+      catch (error) {
         console.error("Error liking:", error.message);
         callback({ status: "Error", message: error.message, data: null });
       }
@@ -161,15 +241,15 @@ const socketIO = (io) => {
       }
       try {
         const message = await addMessage(data);
-        const eventName = 'new-message::'+data.chat.toString();
+        const eventName = 'new-message::' + data.chat.toString();
         socket.broadcast.emit(eventName, message);
         const chat = await getChatById(data.chat);
-        if(chat && chat.type === "single"){
-          const eventName1 = 'update-chatlist::'+chat.participants[0].toString();
-          const eventName2 = 'update-chatlist::'+chat.participants[1].toString();
-          const chatListforUser1 = await getChatByParticipantId({participantId: chat.participants[0]}, {page: 1, limit: 10});
-          const chatListforUser2 = await getChatByParticipantId({participantId: chat.participants[1]}, {page: 1, limit: 10});
-          socket.emit(eventName1, chatListforUser1);  
+        if (chat && chat.type === "single") {
+          const eventName1 = 'update-chatlist::' + chat.participants[0].toString();
+          const eventName2 = 'update-chatlist::' + chat.participants[1].toString();
+          const chatListforUser1 = await getChatByParticipantId({ participantId: chat.participants[0] }, { page: 1, limit: 10 });
+          const chatListforUser2 = await getChatByParticipantId({ participantId: chat.participants[1] }, { page: 1, limit: 10 });
+          socket.emit(eventName1, chatListforUser1);
           socket.emit(eventName2, chatListforUser2);
         }
         callback({
@@ -184,7 +264,6 @@ const socketIO = (io) => {
     });
 
     socket.on("get-messages", async (data, callback) => {
-      console.log("get-messages info---->", data);
       try {
         const messages = await messageService.getMessageByChatId(data.chatId);
         if (messages.length > 0) {
@@ -199,7 +278,6 @@ const socketIO = (io) => {
 
     socket.on("chat-list", async (data, callback) => {
       try {
-        console.log("chat list info---->", data);
         const chats = await chatService.getChats(
           data?.filter,
           data?.options,
