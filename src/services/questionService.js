@@ -31,7 +31,7 @@ const getAllSubCategories = async (filter, options) => {
       { $skip: skip },
       { $limit: limit }
     ];
-    
+
     // Execute aggregation pipeline
     const subCategoryList = await Question.aggregate(aggregationPipeline);
 
@@ -66,13 +66,16 @@ const getAllQuestions = async (filter, options) => {
   const discussionSkip = (discussionPage - 1) * discussionLimit;
 
   const category = new mongoose.Types.ObjectId(filter.category);
+  const userId = new mongoose.Types.ObjectId(filter.userId);
   const subCategory = filter.subCategory;
-  
+
   const questions = await Question.aggregate([
-    { $match: { 
-      category: category,
-      subCategory: subCategory
-    } },
+    {
+      $match: {
+        category: category,
+        subCategory: subCategory
+      }
+    },
     { $skip: skip },
     { $limit: questionlimit },
     {
@@ -112,26 +115,101 @@ const getAllQuestions = async (filter, options) => {
             }
           },
           {
+            $lookup: {
+              from: 'likes',
+              let: { discussionId: '$_id', userId: userId },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$discussion', '$$discussionId'] },
+                        { $eq: ['$user', userId] }
+                      ]
+                    }
+                  }
+                }
+              ],
+              as: 'userLikes'
+            }
+          },
+          {
+            $addFields: {
+              isLiked: { $cond: { if: { $gt: [{ $size: '$userLikes' }, 0] }, then: true, else: false } }
+            }
+          },
+          {
+            $lookup: {
+              from: 'dislikes',
+              let: { discussionId: '$_id', userId: userId },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$discussion', '$$discussionId'] },
+                        { $eq: ['$user', userId] }
+                      ]
+                    }
+                  }
+                }
+              ],
+              as: 'userDislikes'
+            }
+          },
+          {
+            $addFields: {
+              isDisliked: { $cond: { if: { $gt: [{ $size: '$userDislikes' }, 0] }, then: true, else: false } }
+            }
+          },
+          {
             $project: {
               totalReplies: 1,
               likes: 1,
               dislikes: 1,
               discussion: 1,
               createdAt: 1,
-              user: { fullName: "$user.fullName", image: "$user.image", _id: "$user._id" }
+              user: { fullName: "$user.fullName", image: "$user.image", _id: "$user._id" },
+              isLiked: 1,
+              isDisliked: 1
             }
           },
           { $skip: discussionSkip },
           { $limit: discussionLimit }
         ],
         as: 'discussions'
-      },
+      }
     },
     {
-      $project:{
+      $lookup: {
+        from: 'favourites',
+        let: { questionId: '$_id', userId: userId },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$question', '$$questionId'] },
+                  { $eq: ['$user', userId] }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'userFavourites'
+      }
+    },
+    {
+      $addFields: {
+        isFavourite: { $cond: { if: { $gt: [{ $size: '$userFavourites' }, 0] }, then: true, else: false } }
+      }
+    },
+    {
+      $project: {
         question: 1,
         subCategory: 1,
         discussions: 1,
+        isFavourite: 1
       }
     }
   ]);
@@ -139,7 +217,7 @@ const getAllQuestions = async (filter, options) => {
   // Calculate pagination for questions
   const totalResults = await Question.countDocuments(filter);
   const totalPages = Math.ceil(totalResults / questionlimit);
-  const pagination = { totalResults, totalPages, currentPage: page, limit:questionlimit };
+  const pagination = { totalResults, totalPages, currentPage: page, limit: questionlimit };
 
   // Calculate pagination for discussions for each question
   var discussionPagination = {};
@@ -149,7 +227,7 @@ const getAllQuestions = async (filter, options) => {
     discussionPagination = { totalResults: totalDiscussionResults, totalPages: totalDiscussionPages, currentPage: discussionPage, limit: discussionLimit };
   }
 
-  return {questions, pagination, discussionPagination};
+  return { questions, pagination, discussionPagination };
 };
 
 const getSubCategoryBySubCatName = async (filters, options) => {

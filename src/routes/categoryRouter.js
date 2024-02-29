@@ -1,5 +1,5 @@
 const express = require('express');
-const { addNewCategory, allCategories } = require('../controllers/categoryController');
+const { addNewCategory, allCategories, getCategory, updateCategoryById } = require('../controllers/categoryController');
 const router = express.Router();
 const { isValidUser } = require('../middlewares/auth')
 const fs = require('fs');
@@ -23,6 +23,8 @@ if (!fs.existsSync(UPLOADS_FOLDER_USERS)) {
 }
 
 router.post('/', [uploadUsers.single("image")], convertHeicToPng(UPLOADS_FOLDER_USERS), isValidUser, addNewCategory);
+router.put('/:id', [uploadUsers.single("image")], convertHeicToPng(UPLOADS_FOLDER_USERS), isValidUser, updateCategoryById);
 router.get('/', allCategories);
+router.get('/:id', isValidUser,getCategory);
 
 module.exports = router;

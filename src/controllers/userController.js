@@ -18,6 +18,8 @@ const { deleteDislikeByUserId } = require('../services/dislikeService')
 const { deleteLikeByUserId } = require('../services/likeService');
 const { deleteMessageByUserId } = require('../services/messageService');
 const { deletePaymentInfoByUserId } = require('../services/paymentService');
+const User = require('../models/User');
+const Category = require('../models/Category');
 
 function validatePassword(password) {
   const hasNumber = /\d/.test(password);
@@ -145,7 +147,7 @@ const signInWithProvider = async (req, res) => {
   console.log(req.body)
   try {
     var user = await getUserByEmail(req.body.email);
-    if(!user){
+    if (!user) {
       user = {
         fullName: req.body.fullName,
         email: req.body.email,
@@ -322,8 +324,8 @@ const getUsers = async (req, res) => {
     if (search) {
       filter = {
         ...filter,
-        fullName: searchRegExp, 
-        email: searchRegExp, 
+        fullName: searchRegExp,
+        email: searchRegExp,
         phoneNumber: searchRegExp
       }
     }
@@ -439,33 +441,6 @@ const addPasscode = async (req, res) => {
     return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
   }
 
-}
-
-const verifyPasscode = async (req, res) => {
-  try {
-    var token
-    if (req.headers['pass-code'] && req.headers['pass-code'].startsWith('Pass-code ')) {
-      token = req.headers['pass-code'].split(' ')[1];
-    }
-    const tokenData = await verifyToken(token, 'passcode-verification');
-    if (!tokenData) {
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('invalid-token') }));
-    }
-    const { passcode } = req.body;
-    const user = await loginWithPasscode(tokenData.userId.email, passcode);
-    if (!user) {
-      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('invalid-passcode') }));
-    }
-    const accessToken = jwt.sign({ _id: tokenData.userId._id, email: tokenData.userId.email, role: tokenData.userId.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
-    const refreshToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
-    await deleteToken(tokenData._id);
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-verfied'), data: user, accessToken: accessToken, refreshToken: refreshToken }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t(error.message), status: "OK" }));
-  }
 }
 
 const blockUser = async (req, res) => {
@@ -723,4 +698,38 @@ const deleteUserAccount = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider }
+const dashboardCounts = async (req, res) => {
+  try {
+    if (req.body.userRole !== 'admin') {
+      return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised22'), status: "Error" }));
+    }
+    const last7DaysStart = new Date(new Date().setDate(new Date().getDate() - 7));
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const last7DaysUsers = await User.countDocuments({ role: 'user', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+    const totalCategories = await Category.countDocuments();
+    const totalDefaulters = await User.countDocuments({ role: 'user', subscription: 'default', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+    const totalPremiums = await User.countDocuments({ role: 'user', subscription: 'premium', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+    const totalPremiumsPlus = await User.countDocuments({ role: 'user', subscription: 'premium-plus', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+    return res.status(200).json(response({
+      statusCode: '200', message: req.t('dashboard-counts'), status: "OK", data: {
+        totalUsers,
+        totalCategories,
+        totalDefaulters,
+        totalPremiums,
+        totalPremiumsPlus,
+        defatultPercentage: (totalDefaulters / last7DaysUsers) * 100,
+        premiumPercentage: (totalPremiums / last7DaysUsers) * 100,
+        plusPercentage: (totalPremiumsPlus / last7DaysUsers) * 100,
+        today: new Date(),
+        last7DaysStart
+      }
+    }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
+  }
+}
+
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts }

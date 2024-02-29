@@ -6,6 +6,9 @@ const addMySubscription = async (MysubscriptionBody) => {
   try {
     var mySubs = await getMySubscriptionByUserId(MysubscriptionBody.user);
     if (mySubs) {
+      MysubscriptionBody.expiryTime = mySubs.expiryTime+MysubscriptionBody.expiryTime;
+      MysubscriptionBody.questionAccessNumber = mySubs.questionAccessNumber+MysubscriptionBody.questionAccessNumber;
+      MysubscriptionBody.categoryAccessNumber = mySubs.categoryAccessNumber+MysubscriptionBody.categoryAccessNumber;
       return await updateMySubscription(mySubs._id, MysubscriptionBody);
     }
     mySubs = new MySubscription(MysubscriptionBody);

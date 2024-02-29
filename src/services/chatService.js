@@ -119,23 +119,46 @@ const getChatByParticipantId = async (filters, options) => {
   }
 };
 
+const getChatMembersByChatId = async (filters) => {
+  const chatId = filters.chat;
 
+  const chat = await Chat.findById(chatId).populate('participants', 'fullName image');
+  return chat.participants;
+}
+
+const leaveGroup = async (chatId, userId) => {
+  try {
+    const result = await Chat.updateOne(
+      { _id: chatId },
+      { $pull: { participants: userId } }
+    );
+
+    // Check if the update was successful
+    if (result.nModified === 1) {
+      console.log(`Participant with ID ${participantId} removed from chat.`);
+      return true;
+    } else {
+      console.log(`Participant with ID ${participantId} not found in chat.`);
+    }
+  } catch (error) {
+    console.error('Error removing participant from chat:', error);
+  }
+}
 
 const getChatById = async (chatId) => {
   return await Chat.findById(chatId);
 }
-
 
 const deleteChatByUserId = async (userId) => {
   const chat = await Chat.deleteMany({ participants: { $in: [userId] } });
   return chat;
 }
 
-
 module.exports = {
   addChat,
   getChatByParticipants,
   getChatByParticipantId,
   deleteChatByUserId,
-  getChatById
+  getChatById,
+  getChatMembersByChatId
 }

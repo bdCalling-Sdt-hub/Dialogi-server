@@ -40,11 +40,26 @@ const allCategories = async (req, res) => {
   }
 }
 
+const getCategory = async (req, res) => {
+  try{
+    const category = await getCategoryById(req.params.id);
+    return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'category', message: req.t('category-details'), data: category }));
+  }
+  catch(error){
+    console.error(error);
+    logger.error(error.message, req.originalUrl);
+    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'category', message: req.t('server-error') }));
+  }
+}
+
 const updateCategoryById = async (req, res) => {
   try{
     const category = await getCategoryById(req.params.id);
     if(!category){
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'category', message: req.t('category-not-found') }));
+    }
+    if (req.file) {
+      req.body.image = `/uploads/categories/${req.file.filename}`
     }
     const updatedCategory = await updateCategory(req.params.id, req.body);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'category', message: req.t('category-updated'), data: updatedCategory }));
@@ -87,4 +102,4 @@ const getCategoryDetails = async (req, res) => {
   }
 }
 
-module.exports = { addNewCategory, allCategories, updateCategoryById, deleteCategoryById, getCategoryDetails }
+module.exports = { addNewCategory, allCategories, updateCategoryById, deleteCategoryById, getCategoryDetails, getCategory }

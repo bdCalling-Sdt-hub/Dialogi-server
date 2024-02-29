@@ -30,6 +30,9 @@ const allQuestions = async (req, res) => {
       subCategory: req.params.subCategory,
       category: req.params.category
     };
+    if(req.body.userId){
+      filter.userId = req.body.userId;
+    }
     const questions = await getAllQuestions(filter, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('questions'), data: questions }));
   }

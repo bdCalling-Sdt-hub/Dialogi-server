@@ -22,7 +22,6 @@ const getUserByEmail = async (email) => {
 const getAllUsers = async (filter, options) => {
   const {page=1, limit=10} = options;
   const skip = (page - 1) * limit;
-  console.log(filter);
   const userList = await User.find(filter).skip(skip).limit(limit).sort({createdAt: -1});
   const totalResults = await User.countDocuments(filter);
   const totalUsers = await User.countDocuments({role:'user'});

@@ -164,53 +164,230 @@ const getAllDiscussions = async (filter, options) => {
   return { discussionList: discussionListWithReplies, pagination };
 };
 
-const getDiscussionWithReplies = async (discussionId, options) => {
+// const getDiscussionWithReplies = async (discussionId, options) => {
+//   const page = Number(options.page) || 1;
+//   const limit = Number(options.limit) || 10;
+//   const skip = (page - 1) * limit;
+
+//   const discussion = await Discussion.findById(discussionId).select('discussion likes dislikes user createdAt').populate('user', 'fullName image');
+
+//   if (!discussion) {
+//     return null;
+//   }
+
+//   const replies = await Reply.find({ discussion: discussionId })
+//     .skip(skip)
+//     .limit(limit)
+//     .select('reply likes dislikes user')
+//     .populate('user', 'fullName image')
+
+//   const totalResults = await Reply.countDocuments({ discussion: discussionId });
+//   const totalPages = Math.ceil(totalResults / limit);
+//   const pagination = { totalResults, totalPages, currentPage: page, limit };
+
+//   // Create a structure similar to the provided example
+//   const formattedReplies = replies.map(reply => ({
+//     _id: reply._id,
+//     reply: reply.reply,
+//     user: {
+//       fullName: reply.user.fullName,
+//       image: reply.user.image,
+//       _id: reply.user._id
+//     },
+//     likes: reply.likes,
+//     dislikes: reply.dislikes,
+//     createdAt: reply.createdAt
+//   }));
+
+//   const formattedDiscussion = {
+//     _id: discussion._id,
+//     discussion: discussion.discussion,
+//     user: discussion.user,
+//     likes: discussion.likes,
+//     dislikes: discussion.dislikes,
+//     replies: formattedReplies,
+//     createdAt: discussion.createdAt
+//   };
+
+//   return { discussion: formattedDiscussion, pagination };
+// };
+
+
+const getDiscussionWithReplies = async (discussionId, userId, options) => {
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const discussion = await Discussion.findById(discussionId).select('discussion likes dislikes user createdAt').populate('user', 'fullName image');
+  const mongoDiscussionId = new mongoose.Types.ObjectId(discussionId);
+  const mongoUserId = new mongoose.Types.ObjectId(userId);
+
+  const pipeline = [
+    { $match: { _id: mongoDiscussionId } },
+    {
+      $lookup: {
+        from: 'likes',
+        let: { discussionId: '$_id', userId: mongoUserId },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$discussion', mongoDiscussionId] },
+                  { $eq: ['$user', mongoUserId] }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'userLikes'
+      }
+    },
+    {
+      $addFields: {
+        isLiked: { $cond: { if: { $gt: [{ $size: '$userLikes' }, 0] }, then: true, else: false } }
+      }
+    },
+    {
+      $lookup: {
+        from: 'dislikes',
+        let: { discussionId: '$_id', userId: mongoUserId },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$discussion', '$$discussionId'] },
+                  { $eq: ['$user', '$$userId'] }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'userDislikes'
+      }
+    },
+    {
+      $addFields: {
+        isDisliked: { $cond: { if: { $gt: [{ $size: '$userDislikes' }, 0] }, then: true, else: false } }
+      }
+    },
+    {
+      $lookup: {
+        from: 'replies',
+        let: { discussionId: '$_id', userId: mongoUserId },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$discussion', '$$discussionId'] } } },
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'user',
+              foreignField: '_id',
+              as: 'user'
+            }
+          },
+          { $unwind: '$user' },
+          {
+            $lookup: {
+              from: 'likes',
+              let: { replyId: '$_id', userId: mongoUserId },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$reply', '$replyId'] },
+                        { $eq: ['$user','$userId'] }
+                      ]
+                    }
+                  }
+                }
+              ],
+              as: 'userLikes'
+            }
+          },
+          {
+            $lookup: {
+              from: 'dislikes',
+              let: { replyId: '$_id', userId: mongoUserId },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$reply', '$$replyId'] },
+                        { $eq: ['$user', mongoUserId] }
+                      ]
+                    }
+                  }
+                }
+              ],
+              as: 'userDislikes'
+            }
+          },
+          {
+            $addFields: {
+              isLiked: { $cond: { if: { $gt: [{ $size: '$userLikes' }, 0] }, then: true, else: false } },
+              isDisliked: { $cond: { if: { $gt: [{ $size: '$userDislikes' }, 0] }, then: true, else: false } }
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              reply: 1,
+              user: { fullName: '$user.fullName', image: '$user.image', _id: '$user._id' },
+              likes: 1,
+              dislikes: 1,
+              createdAt: 1,
+              isLiked: 1,
+              isDisliked: 1
+            }
+          }
+        ],
+        as: 'replies'
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    { $unwind: '$user' },
+    {
+      $project: {
+        _id: 1,
+        discussion: 1,
+        user: { fullName: '$user.fullName', image: '$user.image', _id: '$user._id' },
+        likes: 1,
+        dislikes: 1,
+        replies: 1,
+        createdAt: 1,
+        isLiked: '$isLiked',
+        isDisliked: '$isDisliked',
+        userLikes: 1,
+      }
+    }
+  ];
+
+  const [discussion] = await Discussion.aggregate(pipeline);
 
   if (!discussion) {
     return null;
   }
 
-  const replies = await Reply.find({ discussion: discussionId })
-    .skip(skip)
-    .limit(limit)
-    .select('reply likes dislikes user')
-    .populate('user', 'fullName image')
-
   const totalResults = await Reply.countDocuments({ discussion: discussionId });
   const totalPages = Math.ceil(totalResults / limit);
   const pagination = { totalResults, totalPages, currentPage: page, limit };
 
-  // Create a structure similar to the provided example
-  const formattedReplies = replies.map(reply => ({
-    _id: reply._id,
-    reply: reply.reply,
-    user: {
-      fullName: reply.user.fullName,
-      image: reply.user.image,
-      _id: reply.user._id
-    },
-    likes: reply.likes,
-    dislikes: reply.dislikes,
-    createdAt: reply.createdAt
-  }));
-
-  const formattedDiscussion = {
-    _id: discussion._id,
-    discussion: discussion.discussion,
-    user: discussion.user,
-    likes: discussion.likes,
-    dislikes: discussion.dislikes,
-    replies: formattedReplies,
-    createdAt: discussion.createdAt
-  };
-
-  return { discussion: formattedDiscussion, pagination };
+  return { discussion, pagination };
 };
+
+
 
 const updateDiscussion = async (discussionId, discussionbody) => {
   try {

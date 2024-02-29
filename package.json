@@ -28,6 +28,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.8",
     "nodemon": "^3.0.2",
+    "paypal-rest-sdk": "^1.8.1",
     "socket.io": "^4.7.2",
     "stripe": "^14.16.0"
   },

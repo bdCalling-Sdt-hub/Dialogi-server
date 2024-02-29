@@ -26,7 +26,7 @@ const getAllSubscriptions = async (filter, options) => {
   return {subscriptionsList, pagination};
 }
 
-const updateSubscription = async (subscriptionId, subscriptionbody) => {
+const updateSubscriptionById = async (subscriptionId, subscriptionbody) => {
   try {
     return await Subscription.findByIdAndUpdate(subscriptionId, subscriptionbody, { new: true });
   }
@@ -47,7 +47,7 @@ const deleteSubscription = async (subscriptionId) => {
 module.exports = {
   addSubscription,
   getSubscriptionById,
-  updateSubscription,
+  updateSubscriptionById,
   getAllSubscriptions,
   deleteSubscription,
 }
