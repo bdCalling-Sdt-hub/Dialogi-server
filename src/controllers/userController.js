@@ -20,6 +20,28 @@ const { deleteMessageByUserId } = require('../services/messageService');
 const { deletePaymentInfoByUserId } = require('../services/paymentService');
 const User = require('../models/User');
 const Category = require('../models/Category');
+const Payment = require('../models/Payment');
+const NodeCache = require('node-cache');
+const cache = new NodeCache();
+
+const generateWeekList = (last7DaysStart) => {
+  const weekList = [];
+  for (let i = 6; i >= 0; i--) {
+    const currentDate = new Date(last7DaysStart);
+    currentDate.setDate(currentDate.getDate() + i);
+    const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
+    weekList.push({ day: dayOfWeek, income: 0 }); // Initialize income as 0
+  }
+  return weekList;
+};
+
+
+const getNextDayStart = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0); // Set time to 00:00:00:000
+  return Math.floor((tomorrow.getTime() - Date.now()) / 1000); // Convert to seconds
+};
 
 function validatePassword(password) {
   const hasNumber = /\d/.test(password);
@@ -710,6 +732,30 @@ const dashboardCounts = async (req, res) => {
     const totalDefaulters = await User.countDocuments({ role: 'user', subscription: 'default', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
     const totalPremiums = await User.countDocuments({ role: 'user', subscription: 'premium', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
     const totalPremiumsPlus = await User.countDocuments({ role: 'user', subscription: 'premium-plus', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+
+    const paymentInfo = await Payment.find({ createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+
+    let weekList = cache.get('weekList');
+
+    // If not cached, generate and cache it
+    if (weekList === undefined) {
+      weekList = generateWeekList(last7DaysStart);
+      const expirationTime = getNextDayStart(); // Get expiration time in seconds
+      cache.set('weekList', weekList, expirationTime);
+    }
+   
+
+    paymentInfo.forEach(payment => {
+      const paymentDay = payment.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayIndex = weekList.findIndex(day => day.day === paymentDay);
+      if (dayIndex !== -1) {
+        weekList[dayIndex].income += payment.paymentData.amount;
+      }
+    });
+
+    console.log(weekList)
+
+
     return res.status(200).json(response({
       statusCode: '200', message: req.t('dashboard-counts'), status: "OK", data: {
         totalUsers,
@@ -721,7 +767,8 @@ const dashboardCounts = async (req, res) => {
         premiumPercentage: (totalPremiums / last7DaysUsers) * 100,
         plusPercentage: (totalPremiumsPlus / last7DaysUsers) * 100,
         today: new Date(),
-        last7DaysStart
+        last7DaysStart,
+        weekList
       }
     }));
   }

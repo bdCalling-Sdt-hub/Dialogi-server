@@ -6,6 +6,7 @@ const subscriptionSchema = new mongoose.Schema({
 
   //show add
   isAddAvailable: { type: Boolean, default: false },
+  addFrequency: { type: Number, default: 0 },
 
   //category access
   categoryAccessNumber: { type: Number, default: 0 },
