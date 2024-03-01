@@ -8,6 +8,12 @@ const supportRouter = require('./routes/supportRouter');
 const categoryRouter = require('./routes/categoryRouter');
 const questionRouter = require('./routes/questionRouter');
 const discussionRouter = require('./routes/discussionRouter');
+const chatRouter = require('./routes/chatRouter');
+const subscriptionRouter = require('./routes/subscriptionRouter');
+const paymentRouter = require('./routes/paymentRouter');
+const friendRouter = require('./routes/friendRouter');
+const messageRouter = require('./routes/messageRouter');
+const favouriteRouter = require('./routes/favouriteRouter');
 
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 const mongoose = require('mongoose');
@@ -73,6 +79,12 @@ app.use('/api/supports', supportRouter);
 app.use('/api/categories', categoryRouter);
 app.use('/api/questions', questionRouter);
 app.use('/api/discussions', discussionRouter);
+app.use('/api/chats', chatRouter);
+app.use('/api/messages', messageRouter);
+app.use('/api/subscriptions', subscriptionRouter);
+app.use('/api/payments', paymentRouter);
+app.use('/api/friends', friendRouter);
+app.use('/api/favourites', favouriteRouter);
 
 //testing API is alive
 app.get('/test', (req, res) => {

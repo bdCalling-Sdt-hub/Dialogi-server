@@ -20,13 +20,12 @@ const userSchema = new mongoose.Schema({
   address: { type: String, required: false },
   dateOfBirth: { type: Date, required: false },
   image: {
-    type: Object, required: false, default: {
-      publicFileUrl: `${process.env.IMAGE_UPLOAD_BACKEND_DOMAIN}/uploads/users/user.png`,
-      path: 'public\\uploads\\users\\user.png'
-    }
+    type: String,
+    default:"/uploads/users/user.png"
   },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   subscription: { type: String, enum: ['default', 'premium', 'premium-plus'], default: 'default' },
+  subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', required: false },
 }, { timestamps: true }, {
   toJSON: {
     transform(doc, ret) {

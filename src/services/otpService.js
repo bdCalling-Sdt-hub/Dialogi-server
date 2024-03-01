@@ -63,7 +63,7 @@ const checkOTPByEmail = async (sentTo) => {
 
 const verifyOTP = async (sentTo, receiverType, purpose, otp) => {
   try {
-    const otpData = await OTP.findOne({ sentTo, receiverType, purpose, otp, expiredAt: { $gt: new Date() }, status: { $eq: "pending" }, verifiedAt: { $eq: null } })
+    const otpData = await OTP.findOne({ sentTo, receiverType, purpose, otp, expiredAt: { $gt: new Date() }, status: { $eq: "pending" }})
     if (!otpData) {
       return null;
     }

@@ -23,7 +23,7 @@ const chatSchema = mongoose.Schema(
     },
     image: {
       type: String,
-      required: false,
+      default: "/uploads/group-chat/group-chat.png",
     },
   },
   {

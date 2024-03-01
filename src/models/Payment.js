@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const paymentInfoSchema = new mongoose.Schema({
+const paymentSchema = new mongoose.Schema({
   paymentData: { type: Object, required: false },
   subscription: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription' },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -8,4 +8,4 @@ const paymentInfoSchema = new mongoose.Schema({
 }, { timestamps: true }
 );
 
-module.exports = mongoose.model('PaymentInfo', paymentInfoSchema);
+module.exports = mongoose.model('Payment', paymentSchema);

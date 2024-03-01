@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const chatSchema = mongoose.Schema(
+const friendSchema = mongoose.Schema(
   {
     participants: [{
       type: mongoose.Schema.Types.ObjectId,
@@ -11,10 +11,10 @@ const chatSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    status: { type: String, enum: ["pending", "accepted", "blocked"], required: false }
+    status: { type: String, enum: ["pending", "accepted", "rejected"], default:"pending" }
   },
   {
     timestamps: true,
   }
 );
-module.exports = mongoose.model("Chat", chatSchema);
+module.exports = mongoose.model("Friend", friendSchema);

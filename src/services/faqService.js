@@ -28,7 +28,16 @@ const findFaq = async (faqBody) => {
 
 const getFaqs = async () => {
   try {
-    return await Faq.findOne().select('question answer');
+    return await Faq.find().select('question answer');
+  }
+  catch (error) {
+    throw error;
+  }
+}
+
+const deleteAFaq = async (faqId) => {
+  try {
+    return await Faq.findByIdAndDelete(faqId);
   }
   catch (error) {
     throw error;
@@ -37,5 +46,6 @@ const getFaqs = async () => {
 
 module.exports = {
   addFaq,
-  getFaqs
+  getFaqs,
+  deleteAFaq
 }

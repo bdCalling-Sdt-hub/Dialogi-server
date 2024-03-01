@@ -22,10 +22,11 @@ const getUserByEmail = async (email) => {
 const getAllUsers = async (filter, options) => {
   const {page=1, limit=10} = options;
   const skip = (page - 1) * limit;
-  const userList = await User.find({...filter}).skip(skip).limit(limit).sort({createdAt: -1});
-  const totalResults = await User.countDocuments({...filter});
+  const userList = await User.find(filter).skip(skip).limit(limit).sort({createdAt: -1});
+  const totalResults = await User.countDocuments(filter);
+  const totalUsers = await User.countDocuments({role:'user'});
   const totalPages = Math.ceil(totalResults / limit);
-  const pagination = {totalResults, totalPages, currentPage: page, limit};
+  const pagination = {totalResults, totalPages, currentPage: page, limit, totalUsers};
   return {userList, pagination};
 }
 
@@ -39,6 +40,16 @@ const login = async (email, password) => {
     return null;
   }
   return user;
+}
+
+const deleteAccount = async (userId) => {
+  try{
+    return await User.findByIdAndDelete(userId);
+  }
+  catch(error){
+    throw error;
+  }
+
 }
 
 const updateUser = async (userId,userbody) => {
@@ -60,5 +71,6 @@ module.exports = {
   getUserById,
   updateUser,
   getUserByEmail,
-  getAllUsers
+  getAllUsers,
+  deleteAccount
 }

@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
-const subscriptionSchema = new mongoose.Schema({
-  name: { type: String, required: false },
+const mySubscriptionSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: { type: String, enum: ["default", "premium", "premium-plus"], required: false },
 
   //show add
   isAddAvailable: { type: Boolean, default: false },
-  addFrequency: { type: Number, default: 0 },
 
   //category access
   categoryAccessNumber: { type: Number, default: 0 },
@@ -27,10 +26,8 @@ const subscriptionSchema = new mongoose.Schema({
   //profile update access
   updateProfileAccess: { type: Boolean, default: false },
 
-  price: { type: Number, default: 0 },
-
   expiryTime: { type: Number, dafault: 1 },
 }, { timestamps: true }
 );
 
-module.exports = mongoose.model('Subscription', subscriptionSchema);
+module.exports = mongoose.model('MySubscription', mySubscriptionSchema);

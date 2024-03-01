@@ -10,7 +10,8 @@ const usersData = [
     "email": "admin.dialogi@gmail.com",
     "phoneNumber": "01735566789",
     "password": 'helloadmin',
-    "role": "admin"
+    "role": "admin",
+    "subscription":"default"
   },
   {
     "fullName": "Testing Clinet",
@@ -18,11 +19,13 @@ const usersData = [
     "phoneNumber": "01734456873",
     "password": 'helloclient',
     "role": "user",
+    "subscription":"default"
   }
 ];
 
 const subscriptionData = [
   {
+    _id: "65cde4e7294393c969cff434",
     name: "Default",
     type: "default",
     isAddAvailable: true,
@@ -45,14 +48,21 @@ const subscriptionData = [
 
     //profile update access
     updateProfileAccess: false,
+
+    //expiry time
+    expiryTime:1,
+
+    //price
+    price: 0,
   },
   {
+    _id: "65cde4e7294393c969cff435",
     name: "Premium",
     type: "premium",
     isAddAvailable: false,
 
     //category access
-    categoryAccessNumber: 0,
+    categoryAccessNumber: 111,
     isCategoryAccessUnlimited: true,
 
     //question access
@@ -69,18 +79,25 @@ const subscriptionData = [
 
     //profile update access
     updateProfileAccess: false,
+
+    //expiry time
+    expiryTime:1,
+
+    //price
+    price: 1.5,
   },
   {
+    _id: "65cde4e7294393c969cff436",
     name: "Premium Plus",
     type: "premium-plus",
     isAddAvailable: false,
 
     //category access
-    categoryAccessNumber: 0,
+    categoryAccessNumber: 111,
     isCategoryAccessUnlimited: true,
 
     //question access
-    questionAccessNumber: 0,
+    questionAccessNumber: 111,
     isQuestionAccessUnlimited: true,
 
     //chat access
@@ -93,6 +110,12 @@ const subscriptionData = [
 
     //profile update access
     updateProfileAccess: true,
+
+    //expiry time
+    expiryTime:1,
+
+    //price
+    price: 2.5,
   }
 ]
 

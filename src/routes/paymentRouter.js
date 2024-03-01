@@ -1,10 +1,11 @@
 const express = require('express');
-const { upgradePaymentInfo, getAllPaymentInfo } = require('../controllers/paymentInfoController');
+const { successPayment, paymentList } = require('../controllers/paymentController');
 const router = express.Router();
 const { isValidUser } = require('../middlewares/auth')
-const validatePaymentInfo = require('../middlewares/paymentInfo/paymentInfoValidation');
 
-router.post('/', isValidUser, validatePaymentInfo, upgradePaymentInfo);
-router.get('/', getAllPaymentInfo);
+router.post('/', isValidUser, successPayment);
+router.get('/', isValidUser, paymentList);
+// router.post('/stripe', isValidUser, successPaymentByStripe);
+// router.post('/makepayment', isValidUser, makePaymentWithPaypal);
 
 module.exports = router;

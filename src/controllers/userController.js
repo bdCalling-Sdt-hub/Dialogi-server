@@ -5,12 +5,43 @@ require('dotenv').config();
 //defining unlinking image function 
 const unlinkImage = require('../common/image/unlinkImage')
 const logger = require("../helpers/logger");
-const { addUser, login, getUserByEmail, getAllUsers, getUserById, loginWithPasscode, deleteUser } = require('../services/userService')
+const { addUser, login, getUserByEmail, getAllUsers, getUserById, deleteAccount } = require('../services/userService')
 const { sendOTP, checkOTPByEmail, verifyOTP } = require('../services/otpService');
 const { addNotification } = require('../services/notificationService');
 const { addToken, verifyToken, deleteToken } = require('../services/tokenService');
 const emailWithNodemailer = require('../helpers/email');
 const crypto = require('crypto');
+const { getFriendByParticipants, deleteFriendByUserId } = require('../services/frinedService');
+const { deleteChatByUserId } = require('../services/chatService');
+const { deleteDiscussionByUserId } = require('../services/discussionService');
+const { deleteDislikeByUserId } = require('../services/dislikeService')
+const { deleteLikeByUserId } = require('../services/likeService');
+const { deleteMessageByUserId } = require('../services/messageService');
+const { deletePaymentInfoByUserId } = require('../services/paymentService');
+const User = require('../models/User');
+const Category = require('../models/Category');
+const Payment = require('../models/Payment');
+const NodeCache = require('node-cache');
+const cache = new NodeCache();
+
+const generateWeekList = (last7DaysStart) => {
+  const weekList = [];
+  for (let i = 6; i >= 0; i--) {
+    const currentDate = new Date(last7DaysStart);
+    currentDate.setDate(currentDate.getDate() + i);
+    const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
+    weekList.push({ day: dayOfWeek, income: 0 }); // Initialize income as 0
+  }
+  return weekList;
+};
+
+
+const getNextDayStart = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0); // Set time to 00:00:00:000
+  return Math.floor((tomorrow.getTime() - Date.now()) / 1000); // Convert to seconds
+};
 
 function validatePassword(password) {
   const hasNumber = /\d/.test(password);
@@ -66,10 +97,7 @@ const signUp = async (req, res) => {
         userData.country = country;
       }
       if (req.file) {
-        userData.image = {
-          publicFileUrl: `${req.protocol}://${req.get('host')}/uploads/users/${req.file.filename}`,
-          path: req.file.path
-        }
+        userData.image = `/uploads/users/${req.file.filename}`
       }
       const registeredUser = await addUser(userData);
       const notifMessage = "New user registered named " + fullName;
@@ -106,7 +134,7 @@ const signIn = async (req, res) => {
 
     const user = await login(email, password);
     if (user && !user?.isBlocked) {
-      const token = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+      const token = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
       const refreshToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
       return res.status(200).json(response({ statusCode: '200', message: req.t('login-success'), status: "OK", type: "user", data: user, accessToken: token, refreshToken: refreshToken }));
     }
@@ -128,7 +156,30 @@ const signInWithRefreshToken = async (req, res) => {
     if (!user || (user && user.isBlocked)) {
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
     }
-    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
+  } catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+  }
+};
+
+const signInWithProvider = async (req, res) => {
+  console.log(req.body)
+  try {
+    var user = await getUserByEmail(req.body.email);
+    if (!user) {
+      user = {
+        fullName: req.body.fullName,
+        email: req.body.email,
+        role: 'user',
+        subscription: 'default'
+      }
+      user = await addUser(user);
+    }
+    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
   } catch (error) {
     console.error(error);
@@ -286,18 +337,25 @@ const getUsers = async (req, res) => {
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const filter = {
-      role: 'user',
-      isBlocked: false
+    const subscription = req.query.subscription;
+    var filter = {
+      role: 'user'
     };
     const search = req.query.search;
     const searchRegExp = new RegExp('.*' + search + '.*', 'i');
     if (search) {
-      filter.$or = [
-        { fullName: searchRegExp },
-        { email: searchRegExp },
-        { phoneNumber: searchRegExp },
-      ]
+      filter = {
+        ...filter,
+        fullName: searchRegExp,
+        email: searchRegExp,
+        phoneNumber: searchRegExp
+      }
+    }
+    if (subscription) {
+      filter = {
+        ...filter,
+        subscription: subscription
+      }
     }
     const options = { page, limit };
     const { userList, pagination } = await getAllUsers(filter, options);
@@ -354,6 +412,26 @@ const userDetails = async (req, res) => {
   }
 }
 
+const getProfileDetails = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const userDetails = await getUserById(id);
+    const profileDetails = [userDetails._id, req.body.userId]
+    const frinedStatus = await getFriendByParticipants(profileDetails);
+    console.log(frinedStatus)
+    var friendRequestStatus = "rejected";
+    if (frinedStatus) {
+      friendRequestStatus = frinedStatus.status;
+    }
+    return res.status(200).json(response({ statusCode: '2000', message: req.t('user-details'), data: { userDetails, friendRequestStatus }, status: "OK" }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
+  }
+}
+
 const addPasscode = async (req, res) => {
   try {
     var token
@@ -375,7 +453,7 @@ const addPasscode = async (req, res) => {
     }
     userData.passcode = passcode;
     await userData.save();
-    const accessToken = jwt.sign({ _id: tokenData.userId._id, email: tokenData.userId.email, role: tokenData.userId.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+    const accessToken = jwt.sign({ _id: tokenData.userId._id, email: tokenData.userId.email, role: tokenData.userId.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
     const refreshToken = jwt.sign({ _id: userData._id, email: userData.email, role: userData.role }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-added'), data: userData, accessToken: accessToken, refreshToken: refreshToken }));
   }
@@ -385,33 +463,6 @@ const addPasscode = async (req, res) => {
     return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
   }
 
-}
-
-const verifyPasscode = async (req, res) => {
-  try {
-    var token
-    if (req.headers['pass-code'] && req.headers['pass-code'].startsWith('Pass-code ')) {
-      token = req.headers['pass-code'].split(' ')[1];
-    }
-    const tokenData = await verifyToken(token, 'passcode-verification');
-    if (!tokenData) {
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('invalid-token') }));
-    }
-    const { passcode } = req.body;
-    const user = await loginWithPasscode(tokenData.userId.email, passcode);
-    if (!user) {
-      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('invalid-passcode') }));
-    }
-    const accessToken = jwt.sign({ _id: tokenData.userId._id, email: tokenData.userId.email, role: tokenData.userId.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
-    const refreshToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
-    await deleteToken(tokenData._id);
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-verfied'), data: user, accessToken: accessToken, refreshToken: refreshToken }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t(error.message), status: "OK" }));
-  }
 }
 
 const blockUser = async (req, res) => {
@@ -499,7 +550,7 @@ const signInWithPasscode = async (req, res) => {
     if (!user || (user && user.role !== 'user') || (user && user.isBlocked)) {
       return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised'), status: "Error" }));
     }
-    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
   }
   catch (error) {
@@ -511,25 +562,20 @@ const signInWithPasscode = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { fullName, phoneNumber, countryCode, countryISO } = req.body;
+    const { fullName, dateOfBirth, address } = req.body;
     const user = await getUserById(req.body.userId);
     if (!user) {
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
     }
     user.fullName = !fullName ? user.fullName : fullName;
-    user.phoneNumber = !phoneNumber ? user.phoneNumber : phoneNumber;
-    user.countryCode = !countryCode ? user.countryCode : countryCode;
-    user.countryISO = !countryISO ? user.countryISO : countryISO;
+    user.dateOfBirth = !dateOfBirth ? user.dateOfBirth : new Date(dateOfBirth);
+    user.address = !address ? user.address : address;
     if (req.file) {
-      const defaultPath = 'public\\uploads\\users\\user.png';
-      console.log('req.file', req.file, user.image.path, defaultPath);
-      if (user.image.path !== defaultPath) {
-        unlinkImage(user.image.path);
+      const defaultPath = '/uploads/users/user.png';
+      if (user.image !== defaultPath) {
+        unlinkImage(user.image);
       }
-      user.image = {
-        publicFileUrl: `${process.env.IMAGE_UPLOAD_BACKEND_DOMAIN}/uploads/users/${req.file.filename}`,
-        path: req.file.path
-      }
+      user.image = `/uploads/users/${req.file.filename}`
     }
     const updatedUser = await user.save();
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-updated'), data: updatedUser }));
@@ -649,4 +695,88 @@ const deleteUserByAdmin = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, verifyPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin }
+const deleteUserAccount = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await login(req.body.userEmail, password);
+    if (!user) {
+      return res.status(400).json(response({ statusCode: '400', message: req.t('password-invalid'), status: "Error" }));
+    }
+    await deleteAccount(user._id);
+    await deleteChatByUserId(user._id);
+    await deleteDiscussionByUserId(user._id);
+    await deleteDislikeByUserId(user._id);
+    await deleteFriendByUserId(user._id);
+    await deleteLikeByUserId(user._id);
+    await deleteMessageByUserId(user._id);
+    await deletePaymentInfoByUserId(user._id);
+
+    return res.status(200).json(response({ statusCode: '200', message: req.t('user-deleted'), status: "OK" }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
+  }
+}
+
+const dashboardCounts = async (req, res) => {
+  try {
+    if (req.body.userRole !== 'admin') {
+      return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised22'), status: "Error" }));
+    }
+    const last7DaysStart = new Date(new Date().setDate(new Date().getDate() - 7));
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const last7DaysUsers = await User.countDocuments({ role: 'user', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+    const totalCategories = await Category.countDocuments();
+    const totalDefaulters = await User.countDocuments({ role: 'user', subscription: 'default', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+    const totalPremiums = await User.countDocuments({ role: 'user', subscription: 'premium', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+    const totalPremiumsPlus = await User.countDocuments({ role: 'user', subscription: 'premium-plus', createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+
+    const paymentInfo = await Payment.find({ createdAt: { $gte: last7DaysStart, $lte: new Date() } });
+
+    let weekList = cache.get('weekList');
+
+    // If not cached, generate and cache it
+    if (weekList === undefined) {
+      weekList = generateWeekList(last7DaysStart);
+      const expirationTime = getNextDayStart(); // Get expiration time in seconds
+      cache.set('weekList', weekList, expirationTime);
+    }
+   
+
+    paymentInfo.forEach(payment => {
+      const paymentDay = payment.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayIndex = weekList.findIndex(day => day.day === paymentDay);
+      if (dayIndex !== -1) {
+        weekList[dayIndex].income += payment.paymentData.amount;
+      }
+    });
+
+    console.log(weekList)
+
+
+    return res.status(200).json(response({
+      statusCode: '200', message: req.t('dashboard-counts'), status: "OK", data: {
+        totalUsers,
+        totalCategories,
+        totalDefaulters,
+        totalPremiums,
+        totalPremiumsPlus,
+        defatultPercentage: (totalDefaulters / last7DaysUsers) * 100,
+        premiumPercentage: (totalPremiums / last7DaysUsers) * 100,
+        plusPercentage: (totalPremiumsPlus / last7DaysUsers) * 100,
+        today: new Date(),
+        last7DaysStart,
+        weekList
+      }
+    }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
+  }
+}
+
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts }

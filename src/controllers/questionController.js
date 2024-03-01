@@ -1,7 +1,7 @@
 require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
-const { addQuestion, getAllQuestions, updateQuestion, getQuestionByQuestionAndSubCategory, getQuestionById, deleteQuestion, getAllSubCategories } = require('../services/questionService');
+const { addQuestion, getAllQuestions, updateQuestion, getQuestionByQuestionAndSubCategory, getQuestionById, deleteQuestion, getAllSubCategories, getSubCategoryBySubCatName } = require('../services/questionService');
 
 const addNewQuestion = async (req, res) => {
   try{
@@ -24,11 +24,15 @@ const addNewQuestion = async (req, res) => {
 
 const allQuestions = async (req, res) => {
   try{
-    const { page, limit } = req.query;
-    const options = { page, limit };
+    const { page, discussionLimit, discussionPage } = req.query;
+    const options = { page, discussionLimit,discussionPage };
     const filter = {
       subCategory: req.params.subCategory,
+      category: req.params.category
     };
+    if(req.body.userId){
+      filter.userId = req.body.userId;
+    }
     const questions = await getAllQuestions(filter, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('questions'), data: questions }));
   }
@@ -90,7 +94,7 @@ const getSubCategory = async (req, res) => {
   try{
     const { page, limit } = req.query;
     const options = { page, limit };
-    const filter = { category: req.params.id };
+    const filter = { category: req.params.categoryID };
     const category = await getAllSubCategories(filter, options);
     if(!category){
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'category', message: req.t('category-not-found') }));
@@ -104,4 +108,12 @@ const getSubCategory = async (req, res) => {
   }
 }
 
-module.exports = { addNewQuestion, allQuestions, updateQuestionById, deleteQuestionById, getQuestionDetails, getSubCategory }
+const getSubCategoryByName = async (req, res) => {
+  const { limit, search, categoryId } = req.query;
+  const options = { limit };
+  const filter = { subCategory: new RegExp('.*' + search + '.*', 'i'), category: categoryId };
+  const subCategories = await getSubCategoryBySubCatName(filter, options);
+  return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'category', message: req.t('sub-category-details'), data: subCategories }));
+} 
+
+module.exports = { addNewQuestion, allQuestions, updateQuestionById, deleteQuestionById, getQuestionDetails, getSubCategory, getSubCategoryByName }
