@@ -218,7 +218,6 @@ const paymentList = async (req, res) => {
     const totalAmount = result.length > 0 ? result[0].totalAmount : 0;
 
     if (paymentType === 'today') {
-      console.log('today-----------');
       endDate = new Date(new Date().setDate(startDate.getDate() - 1));
       paymentData = await Payment.find({ createdAt: { $gte: endDate, $lte: startDate } }).select('paymentData user createdAt').populate('user', 'fullName image email').skip(skip).limit(limit).sort({ createdAt: -1 });
       const totalResults = await Payment.countDocuments({ createdAt: { $gte: endDate, $lte: startDate } });

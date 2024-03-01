@@ -25,6 +25,11 @@ const chatSchema = mongoose.Schema(
       type: String,
       default: "/uploads/group-chat/group-chat.png",
     },
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+    }
   },
   {
     timestamps: true,

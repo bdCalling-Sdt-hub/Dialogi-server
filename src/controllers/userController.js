@@ -166,7 +166,6 @@ const signInWithRefreshToken = async (req, res) => {
 };
 
 const signInWithProvider = async (req, res) => {
-  console.log(req.body)
   try {
     var user = await getUserByEmail(req.body.email);
     if (!user) {
@@ -418,7 +417,6 @@ const getProfileDetails = async (req, res) => {
     const userDetails = await getUserById(id);
     const profileDetails = [userDetails._id, req.body.userId]
     const frinedStatus = await getFriendByParticipants(profileDetails);
-    console.log(frinedStatus)
     var friendRequestStatus = "rejected";
     if (frinedStatus) {
       friendRequestStatus = frinedStatus.status;
@@ -752,10 +750,6 @@ const dashboardCounts = async (req, res) => {
         weekList[dayIndex].income += payment.paymentData.amount;
       }
     });
-
-    console.log(weekList)
-
-
     return res.status(200).json(response({
       statusCode: '200', message: req.t('dashboard-counts'), status: "OK", data: {
         totalUsers,
@@ -779,4 +773,26 @@ const dashboardCounts = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts }
+const getPremiumPlusUsers = async (req, res) => {
+  try{
+    if(req.body.userRole !== 'user'){
+      return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised'), status: "Error" }));
+    }
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const filter = {
+      role: 'user',
+      subscription: 'premium-plus',
+    };
+    const options = { page, limit };
+    const { userList, pagination } = await getAllUsers(filter, options);
+    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-list'), data: { userList, pagination } }));
+  }
+  catch(error){
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
+  }
+}
+
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts, getPremiumPlusUsers }

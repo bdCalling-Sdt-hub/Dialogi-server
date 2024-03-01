@@ -11,6 +11,17 @@ const addChat = async (chatBody) => {
   }
 }
 
+const addToCommunity = async (chatId, userId) => {
+  try {
+    const result = await Chat.updateOne(
+      { _id: chatId },
+      { $push: { participants: userId } }
+    );
+  } catch (error) {
+    console.error('Error adding participant to chat:', error);
+  }
+}
+
 const getChatByParticipants = async (data) => {
   const ndata = await Chat.findOne({
     participants: {
@@ -149,6 +160,17 @@ const getChatById = async (chatId) => {
   return await Chat.findById(chatId);
 }
 
+const getChat = async (filters, options) => {
+  const { page=1, limit=10 } = options;
+  const skip = (page - 1) * limit;
+  console.log('filters--->', filters);
+  const chatList = await Chat.find(filters).limit(limit).skip(skip).sort({createdAt: -1}).select('groupName image');
+  const totalResults = await Chat.countDocuments(filters);
+  const totalPages = Math.ceil(totalResults / limit);
+  const pagination = { totalResults, totalPages, currentPage: page, limit };
+  return { chatList, pagination };
+}
+
 const deleteChatByUserId = async (userId) => {
   const chat = await Chat.deleteMany({ participants: { $in: [userId] } });
   return chat;
@@ -156,6 +178,7 @@ const deleteChatByUserId = async (userId) => {
 
 module.exports = {
   addChat,
+  getChat,
   getChatByParticipants,
   getChatByParticipantId,
   deleteChatByUserId,
