@@ -13,22 +13,45 @@ const addChat = async (chatBody) => {
 
 const addToCommunity = async (chatId, userId) => {
   try {
-    const result = await Chat.updateOne(
+    console.log('chatId--->', chatId, userId);
+    const result =  await Chat.updateOne(
       { _id: chatId },
       { $push: { participants: userId } }
     );
+    console.log('result--->', result);
+    if (result.modifiedCount === 1) {
+      console.log(`Participant with ID ${userId} joined the chat.`);
+      return true;
+    } else {
+      console.log(`Participant with ID ${userId} can not joined the chat.`);
+      return false;
+    }
+
   } catch (error) {
     console.error('Error adding participant to chat:', error);
   }
 }
 
+const getParticipantStatus = async (chatId, userId, type) => {
+  try {
+    return await Chat.findOne({ _id: chatId, participants: userId, type });
+  }
+  catch(error){
+    throw error;
+  }
+}
+
 const getChatByParticipants = async (data) => {
-  const ndata = await Chat.findOne({
+  const filters = {
     participants: {
       $all: data.participants
     },
-    type: !data.type ? 'single' : data.type
-  });
+    type: !data.type ? 'single' : data.type,
+  }
+  if(data.groupName){
+    filters.groupName = data.groupName;
+  }
+  const ndata = await Chat.findOne(filters);
   console.log('data--->', ndata, data);
   return ndata;
 }
@@ -58,9 +81,15 @@ const getChatByParticipantId = async (filters, options) => {
     const skip = (page - 1) * limit;
 
     const participantId = new mongoose.Types.ObjectId(filters.participantId);
+    if(filters.type === 'community'){
+      type = 'community';
+    }
+    else{
+      type = { $ne: 'community' };
+    }
 
     const chatList = await Chat.aggregate([
-      { $match: { participants: participantId } },
+      { $match: { participants: participantId, type } },
       {
         $lookup: {
           from: "messages",
@@ -134,6 +163,7 @@ const getChatMembersByChatId = async (filters) => {
   const chatId = filters.chat;
 
   const chat = await Chat.findById(chatId).populate('participants', 'fullName image');
+  
   return chat.participants;
 }
 
@@ -143,16 +173,17 @@ const leaveGroup = async (chatId, userId) => {
       { _id: chatId },
       { $pull: { participants: userId } }
     );
-
+    console.log('result--->', result);
     // Check if the update was successful
-    if (result.nModified === 1) {
-      console.log(`Participant with ID ${participantId} removed from chat.`);
+    if (result.modifiedCount === 1) {
+      console.log(`Participant with ID ${userId} removed from chat.`);
       return true;
     } else {
-      console.log(`Participant with ID ${participantId} not found in chat.`);
+      console.log(`Participant with ID ${userId} not found in chat.`);
+      return false;
     }
   } catch (error) {
-    console.error('Error removing participant from chat:', error);
+    throw error;
   }
 }
 
@@ -179,9 +210,12 @@ const deleteChatByUserId = async (userId) => {
 module.exports = {
   addChat,
   getChat,
+  addToCommunity,
+  leaveGroup,
   getChatByParticipants,
   getChatByParticipantId,
   deleteChatByUserId,
   getChatById,
-  getChatMembersByChatId
+  getChatMembersByChatId,
+  getParticipantStatus
 }

@@ -8,6 +8,7 @@ const { addPayment } = require('../services/paymentService');
 const { getUserById } = require('../services/userService');
 const { addMySubscription } = require('../services/mySubscriptionService');
 const Payment = require('../models/Payment');
+const { addNotification } = require('../services/notificationService');
 
 
 // const makePaymentWithStripe = async (req, res) => {
@@ -185,6 +186,29 @@ const successPayment = async (req, res) => {
       }
     }
     const { paymentInfo, myUpdatedSubscription, accessToken } = await addPaymentInfo(req.body.userId, paymentData, subscriptionId);
+    const userData = await getUserById(req.body.userId);
+
+    const senderNotifation = {
+      message: "Your payment is successful",
+      receiver: req.body.userId,
+      linkId: paymentInfo._id,
+      type: 'payment',
+      role: 'user',
+    }
+    const adminNotification = {
+      message: "You have received " + amount + "$ from " + userData.fullName + " for " + name + " subscription.",
+      receiver: req.body.userId,
+      linkId: paymentInfo._id,
+      type: 'payment',
+      role: 'admin',
+    }
+    const adminNewNotification = await addNotification(adminNotification);
+    const roomId = 'user-notification::' + req.body.userId.toString();
+    io.emit(roomId, adminNewNotification)
+
+    const senderNotifationPart = await addNotification(senderNotifation);
+    io.emit("dialogi-admin-notification", senderNotifationPart)
+
     return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'payment', message: req.t('payment-success'), data: { paymentInfo, myUpdatedSubscription }, accessToken: accessToken }));
   } catch (error) {
     console.error(error);
@@ -240,7 +264,7 @@ const paymentList = async (req, res) => {
           }
         }
       ]);
-  
+
       // Extract the total amount from the result
       totalIncome = result.length > 0 ? result[0].totalAmount : 0;
     }
@@ -266,14 +290,14 @@ const paymentList = async (req, res) => {
           }
         }
       ]);
-  
+
       // Extract the total amount from the result
       totalIncome = result.length > 0 ? result[0].totalAmount : 0;
     }
     if (paymentType === 'monthly') {
       const endDate = new Date();
       endDate.setFullYear(startDate.getFullYear() - 1);
-    
+
       paymentData = await Payment.aggregate([
         {
           $match: {
@@ -282,7 +306,7 @@ const paymentList = async (req, res) => {
         },
         {
           $sort: { createdAt: 1 } // Sort by createdAt in ascending order
-      },
+        },
         {
           $group: {
             _id: {
@@ -291,6 +315,12 @@ const paymentList = async (req, res) => {
             },
             totalAmount: { $sum: '$paymentData.amount' },
             totalUsers: { $sum: 1 } // Counting documents in each group
+          }
+        },
+        {
+          $sort: {
+            '_id.year': -1,
+            '_id.month': -1
           }
         },
         {

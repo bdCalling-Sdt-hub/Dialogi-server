@@ -1,7 +1,7 @@
 require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
-const { getNotifications, getNotificationById } = require('../services/notificationService');
+const { getNotifications } = require('../services/notificationService');
 
 const getAllNotifications = async (req, res) => {
   try{

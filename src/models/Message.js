@@ -20,6 +20,10 @@ const messageSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
       required: false,
+    },
+    isSpecialL:{
+      type: Boolean,
+      default: false
     }
   },
   {

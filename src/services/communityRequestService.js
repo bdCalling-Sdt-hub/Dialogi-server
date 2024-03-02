@@ -20,7 +20,7 @@ const getCommunityRequest = async (filters, options) => {
   try {
     const {page=1, limit=10} = options;
     const skip = (page - 1) * limit;
-    const communityRequestList =  await CommunityRequest.find(filters).select('user status').populate('user', 'fullName image').skip(skip).limit(limit);
+    const communityRequestList =  await CommunityRequest.find(filters).select('chat').populate('chat createdAt', 'groupName image').skip(skip).limit(limit);
     const totalResults = await CommunityRequest.countDocuments(filters);
     const totalPages = Math.ceil(totalResults / limit);
     const pagination = { totalResults, totalPages, currentPage: page, limit };
@@ -30,8 +30,18 @@ const getCommunityRequest = async (filters, options) => {
   }
 }
 
+const getCommunityRequestById = async (id)=>{
+  try{
+    return await CommunityRequest.findById(id)
+  }
+  catch(err){
+    throw err;
+  }
+}
+
 module.exports = {
   addMultipleCommunityRequest,
   deleteCommunityRequest,
-  getCommunityRequest
+  getCommunityRequest,
+  getCommunityRequestById
 }

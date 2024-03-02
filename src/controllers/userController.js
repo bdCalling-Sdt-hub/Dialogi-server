@@ -110,7 +110,10 @@ const signUp = async (req, res) => {
       const sendNotification = await addNotification(notification);
       io.emit('dialogi-admin-notification', { status: 1008, message: sendNotification.message })
 
-      return res.status(201).json(response({ status: 'OK', statusCode: '201', type: 'user', message: req.t('user-verified'), data: registeredUser }));
+      const accessToken = jwt.sign({ _id: registeredUser._id, email: registeredUser.email, role: registeredUser.role, subscription: registeredUser.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+      const refreshToken = jwt.sign({ _id: registeredUser._id, email: registeredUser.email, role: registeredUser.role, subscription: registeredUser.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
+
+      return res.status(201).json(response({ status: 'OK', statusCode: '201', type: 'user', message: req.t('user-verified'), data: registeredUser, accessToken: accessToken, refreshToken: refreshToken }));
     }
   } catch (error) {
     console.error(error);
@@ -741,7 +744,7 @@ const dashboardCounts = async (req, res) => {
       const expirationTime = getNextDayStart(); // Get expiration time in seconds
       cache.set('weekList', weekList, expirationTime);
     }
-   
+
 
     paymentInfo.forEach(payment => {
       const paymentDay = payment.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
@@ -774,8 +777,8 @@ const dashboardCounts = async (req, res) => {
 }
 
 const getPremiumPlusUsers = async (req, res) => {
-  try{
-    if(req.body.userRole !== 'user'){
+  try {
+    if (req.body.userRole !== 'user') {
       return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised'), status: "Error" }));
     }
     const page = Number(req.query.page) || 1;
@@ -788,7 +791,7 @@ const getPremiumPlusUsers = async (req, res) => {
     const { userList, pagination } = await getAllUsers(filter, options);
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-list'), data: { userList, pagination } }));
   }
-  catch(error){
+  catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
     return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
