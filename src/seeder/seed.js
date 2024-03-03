@@ -29,6 +29,7 @@ const subscriptionData = [
     name: "Default",
     type: "default",
     isAddAvailable: true,
+    addFrequency: 5,
 
     //category access
     categoryAccessNumber: 4,
@@ -60,6 +61,7 @@ const subscriptionData = [
     name: "Premium",
     type: "premium",
     isAddAvailable: false,
+    addFrequency: 0,
 
     //category access
     categoryAccessNumber: 111,
@@ -91,6 +93,7 @@ const subscriptionData = [
     name: "Premium Plus",
     type: "premium-plus",
     isAddAvailable: false,
+    addFrequency: 0,
 
     //category access
     categoryAccessNumber: 111,

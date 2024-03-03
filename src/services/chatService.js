@@ -1,3 +1,4 @@
+const { error } = require('../helpers/logger');
 const Chat = require('../models/Chat');
 const mongoose = require('mongoose');
 
@@ -42,18 +43,23 @@ const getParticipantStatus = async (chatId, userId, type) => {
 }
 
 const getChatByParticipants = async (data) => {
-  const filters = {
-    participants: {
-      $all: data.participants
-    },
-    type: !data.type ? 'single' : data.type,
+  try{
+    const filters = {
+      participants: {
+        $all: data.participants
+      },
+      type: !data.type ? 'single' : data.type,
+    }
+    if(data.groupName){
+      filters.groupName = data.groupName;
+    }
+    const ndata = await Chat.findOne(filters);
+    console.log('data--->', ndata, data);
+    return ndata;
   }
-  if(data.groupName){
-    filters.groupName = data.groupName;
+  catch(error){
+    throw error;
   }
-  const ndata = await Chat.findOne(filters);
-  console.log('data--->', ndata, data);
-  return ndata;
 }
 
 // const getChatByParticipantId = async (filters, options) => {
@@ -207,8 +213,18 @@ const deleteChatByUserId = async (userId) => {
   return chat;
 }
 
+const getCommunityStatusByUserId = async (userId, category, groupName) => {
+  try{
+    return await Chat.findOne({ participants: {$in: [userId]}, type: 'community', groupAdmin: userId, groupName: groupName, category: category });
+  }
+  catch(error){
+    throw error
+  }
+}
+
 module.exports = {
   addChat,
+  getCommunityStatusByUserId,
   getChat,
   addToCommunity,
   leaveGroup,

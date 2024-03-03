@@ -63,14 +63,14 @@ const getCommunities = async (req, res) => {
 
 const leaveFromGroup = async (req, res) => {
   try {
-    const chatId = req.params.id;
+    const chatId = (req.params.id).toString();
     const type = req.body.type;
     const chat = await getChatById(chatId);
     if (!chat) {
       return res.status(404).json(response({ status: 'Not Found', statusCode: '404', message: req.t('not-found') }));
     }
     const existingStatus = await getParticipantStatus(chatId, req.body.userId, type);
-    if(!existingStatus){
+    if (!existingStatus) {
       return res.status(404).json(response({ status: 'Not Found', statusCode: '404', message: req.t('member-not-found') }));
     }
     const result = await leaveGroup(chatId, req.body.userId);
@@ -81,9 +81,10 @@ const leaveFromGroup = async (req, res) => {
         chat: chatId,
         message: userData.fullName + " has left the chat",
         sender: req.body.userId,
-        isSpecial: true
+        messageType:"notice"
       }
       const updatedMessage = await addMessage(newMessage);
+      console.log(updatedMessage);
       const eventName = `new-message::${chatId}`;
 
       //sending the leave message to group
@@ -115,7 +116,7 @@ const kickMember = async (req, res) => {
     }
 
     const existingStatus = await getParticipantStatus(chatId, userId, type);
-    if(!existingStatus){
+    if (!existingStatus) {
       return res.status(404).json(response({ status: 'Not Found', statusCode: '404', message: req.t('member-not-found') }));
     }
     const result = await leaveGroup(chatId, userId);
@@ -123,9 +124,9 @@ const kickMember = async (req, res) => {
       const userData = await getUserById(userId);
       const newMessage = {
         chat: chatId,
-        message: "Admin has kicked "+userData.fullName + " from the chat",
+        message: "Admin has kicked " + userData.fullName + " from the chat",
         sender: req.body.userId,
-        isSpecial: true
+        messageType:"notice"
       }
       const updatedMessage = await addMessage(newMessage);
       const eventName = `new-message::${chatId}`;
@@ -143,4 +144,33 @@ const kickMember = async (req, res) => {
   }
 }
 
-module.exports = { getAllChats, getChatMembers, getCommunities, kickMember, leaveFromGroup }
+const updateGroupName = async (req, res) => {
+  try {
+    const chatId = req.params.id;
+    const chat = await getChatById(chatId);
+    if (!chat) {
+      return res.status(404).json(response({ status: 'Not Found', statusCode: '404', message: req.t('not-found') }));
+    }
+    chat.groupName = req.body.name;
+    const updatedChat = await chat.save();
+    const newMessage = {
+      chat: chatId,
+      message: "Group name has been updated to " + req.body.name,
+      sender: req.body.userId,
+      messageType:"notice"
+    }
+    const updatedMessage = await addMessage(newMessage);
+    const eventName = `new-message::${chatId}`;
+    io.emit(eventName, updatedMessage);
+
+    return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('group-name-updated'), data: updatedChat }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error.message, req.originalUrl);
+    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'chat', message: req.t('server-error') }));
+
+  }
+}
+
+module.exports = { getAllChats, getChatMembers, getCommunities, kickMember, leaveFromGroup, updateGroupName }

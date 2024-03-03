@@ -91,6 +91,7 @@ const socketIO = (io) => {
             }
             else if (!mySubscription.isCategoryAccessUnlimited && mySubscription.categoryAccessNumber > 0 && (new Date(new Date().setMonth(new Date().getMonth() + mySubscription.expiryTime)) > new Date())) {
               mySubscription.categoryAccessNumber = mySubscription.categoryAccessNumber - 1;
+              mySubscription.questionAccessed = mySubscription.questionAccessed + 1;
               await updateMySubscription(mySubscription._id, mySubscription);
               return callback({ status: "Success", message: "Category access granted", data: mySubscription });
             }
@@ -240,6 +241,7 @@ const socketIO = (io) => {
         });
       }
       try {
+        data.messageType="normal"
         const message = await addMessage(data);
         const eventName = 'new-message::' + data.chat.toString();
         socket.broadcast.emit(eventName, message);
@@ -247,10 +249,11 @@ const socketIO = (io) => {
         if (chat && chat.type === "single") {
           const eventName1 = 'update-chatlist::' + chat.participants[0].toString();
           const eventName2 = 'update-chatlist::' + chat.participants[1].toString();
+          console.log(eventName1, eventName2);
           const chatListforUser1 = await getChatByParticipantId({ participantId: chat.participants[0] }, { page: 1, limit: 10 });
           const chatListforUser2 = await getChatByParticipantId({ participantId: chat.participants[1] }, { page: 1, limit: 10 });
-          socket.emit(eventName1, chatListforUser1);
-          socket.emit(eventName2, chatListforUser2);
+          io.emit(eventName1, chatListforUser1);
+          io.emit(eventName2, chatListforUser2);
         }
         callback({
           status: "Success",

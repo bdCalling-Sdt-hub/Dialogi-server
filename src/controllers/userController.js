@@ -26,7 +26,7 @@ const cache = new NodeCache();
 
 const generateWeekList = (last7DaysStart) => {
   const weekList = [];
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 1; i <= 7; i++) {
     const currentDate = new Date(last7DaysStart);
     currentDate.setDate(currentDate.getDate() + i);
     const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
@@ -562,6 +562,8 @@ const signInWithPasscode = async (req, res) => {
 }
 
 const updateProfile = async (req, res) => {
+  console.log(req.body)
+  console.log(req.file)
   try {
     const { fullName, dateOfBirth, address } = req.body;
     const user = await getUserById(req.body.userId);
@@ -584,6 +586,9 @@ const updateProfile = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
+    if(req.file){
+      unlinkImage(req.file.path)
+    }
     return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
@@ -745,6 +750,18 @@ const dashboardCounts = async (req, res) => {
       cache.set('weekList', weekList, expirationTime);
     }
 
+    const result = await Payment.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$paymentData.amount' } // Sum up the amount field from paymentData
+        }
+      }
+    ]);
+
+    // Extract the total amount from the result
+    const totalAmount = result.length > 0 ? result[0].totalAmount : 0;
+
 
     paymentInfo.forEach(payment => {
       const paymentDay = payment.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
@@ -765,7 +782,8 @@ const dashboardCounts = async (req, res) => {
         plusPercentage: (totalPremiumsPlus / last7DaysUsers) * 100,
         today: new Date(),
         last7DaysStart,
-        weekList
+        weekList,
+        totalAmount
       }
     }));
   }

@@ -21,9 +21,10 @@ const messageSchema = mongoose.Schema(
       ref: "Message",
       required: false,
     },
-    isSpecialL:{
-      type: Boolean,
-      default: false
+    messageType:{
+      type: String,
+      enum: ["normal", "notice", "question"],
+      default: "normal"
     }
   },
   {

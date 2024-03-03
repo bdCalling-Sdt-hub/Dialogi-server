@@ -30,6 +30,7 @@ const allQuestions = async (req, res) => {
       subCategory: req.params.subCategory,
       category: req.params.category
     };
+    console.log(req.body.userId);
     if(req.body.userId){
       filter.userId = req.body.userId;
     }
@@ -92,9 +93,11 @@ const getQuestionDetails = async (req, res) => {
 
 const getSubCategory = async (req, res) => {
   try{
-    const { page, limit } = req.query;
+    const { page, limit, accessStatus } = req.query;
+    console.log(typeof accessStatus, accessStatus)
     const options = { page, limit };
-    const filter = { category: req.params.categoryID };
+    const filter = { category: req.params.categoryID, accessStatus};
+  
     const category = await getAllSubCategories(filter, options);
     if(!category){
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'category', message: req.t('category-not-found') }));

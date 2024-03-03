@@ -2,7 +2,7 @@ require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
 const { addMultipleCommunityRequest, deleteCommunityRequest, getCommunityRequest, getCommunityRequestById } = require('../services/communityRequestService');
-const { addChat, getChatByParticipants, addToCommunity, getChatById, getParticipantStatus } = require('../services/chatService');
+const { addChat, getChatByParticipants, addToCommunity, getChatById, getParticipantStatus, getCommunityStatusByUserId } = require('../services/chatService');
 const { getUserById } = require('../services/userService');
 const { addMessage } = require('../services/messageService');
 const { addMultipleNofiications, addNotification } = require('../services/notificationService');
@@ -14,6 +14,10 @@ const addCommunityRequest = async (req, res) => {
     console.log(req.body, participants);
     if (req.body.userRole !== "user" && req.body.userSubscription !== "premium-plus") {
       return res.status(403).json(response({ status: 'Error', statusCode: '403', message: req.t('unauthorized') }));
+    }
+    const existingCom = await getCommunityStatusByUserId(req.body.userId, category, groupName);
+    if(existingCom){
+      return res.status(400).json(response({ status: 'Error', statusCode: '400', message: req.t('already-exists'), data: existingCom }));
     }
     const chatData = {
       participants: [req.body.userId],
@@ -47,7 +51,6 @@ const addCommunityRequest = async (req, res) => {
       const eventName = `user-notification::${participant}`;
       io.emit(eventName, updatedNotification);
     });
-    console.log(result);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('community-request-sent'), data: newGroup }));
   }
   catch (error) {

@@ -33,6 +33,7 @@ const addDefaultSubscription = async (userId) => {
       user: user._id,
       type: defaultSubs?.type,
       isAddAvailable: defaultSubs?.isAddAvailable,
+      addFrequency: defaultSubs?.addFrequency,
       categoryAccessNumber: defaultSubs?.categoryAccessNumber,
       isCategoryAccessUnlimited: defaultSubs.isCategoryAccessUnlimited,
       questionAccessNumber: defaultSubs.questionAccessNumber,
