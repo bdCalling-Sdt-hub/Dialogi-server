@@ -157,7 +157,7 @@ async function addPaymentInfo(userId, paymentData, subscriptionId) {
 
       myUpdatedSubscription = await addMySubscription(mySubscription);
 
-      accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+      accessToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
     }
     return { paymentInfo, myUpdatedSubscription, accessToken };
   }
@@ -186,8 +186,7 @@ const successPayment = async (req, res) => {
       }
     }
     const { paymentInfo, myUpdatedSubscription, accessToken } = await addPaymentInfo(req.body.userId, paymentData, subscriptionId);
-    const userData = await getUserById(req.body.userId);
-
+    
     const senderNotifation = {
       message: "Your payment is successful",
       receiver: req.body.userId,
@@ -196,18 +195,20 @@ const successPayment = async (req, res) => {
       role: 'user',
     }
     const adminNotification = {
-      message: "You have received " + amount + "$ from " + userData.fullName + " for " + name + " subscription.",
+      message: "You have received " + amount + "$ from " + req.body.userFullName + " for " + name + " subscription.",
       receiver: req.body.userId,
       linkId: paymentInfo._id,
       type: 'payment',
       role: 'admin',
     }
     const adminNewNotification = await addNotification(adminNotification);
-    const roomId = 'user-notification::' + req.body.userId.toString();
-    io.emit(roomId, adminNewNotification)
+    io.emit("dialogi-admin-notification", { status: 1008, message: adminNewNotification.message })
+    
+    
 
+    const roomId = 'user-notification::' + req.body.userId.toString();
     const senderNotifationPart = await addNotification(senderNotifation);
-    io.emit("dialogi-admin-notification", senderNotifationPart)
+    io.emit(roomId, senderNotifationPart)
 
     return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'payment', message: req.t('payment-success'), data: { paymentInfo, myUpdatedSubscription }, accessToken: accessToken }));
   } catch (error) {

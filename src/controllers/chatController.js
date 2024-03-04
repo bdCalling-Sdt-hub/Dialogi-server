@@ -76,10 +76,9 @@ const leaveFromGroup = async (req, res) => {
     const result = await leaveGroup(chatId, req.body.userId);
 
     if (result) {
-      const userData = await getUserById(req.body.userId);
       const newMessage = {
         chat: chatId,
-        message: userData.fullName + " has left the chat",
+        message: req.body.userFullName + " has left the chat",
         sender: req.body.userId,
         messageType:"notice"
       }
