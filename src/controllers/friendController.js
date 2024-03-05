@@ -2,6 +2,7 @@ require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
 const { getFriendByParticipantId, addFriend, getFriendByParticipants, updateFriend, getFriendById, getGroupCreateFriendByParticipantId } = require('../services/frinedService');
+const { addNotification } = require('../services/notificationService');
 
 const makeFriend = async (req, res) => {
   try{
@@ -19,6 +20,18 @@ const makeFriend = async (req, res) => {
       sender: req.body.userId
     }
     const friend = await addFriend(data);
+
+    const userNotification = {
+      message: "You have received a friend request from " + req.body.userFullName,
+      receiver: req.body.participantId,
+      linkId: friend._id,
+      type: 'friend-request',
+      role: 'user',
+    }
+    const userNewNotification = await addNotification(userNotification);
+    const roomId = 'user-notification::' + req.body.userId.toString();
+    io.emit(roomId, userNewNotification)
+    
     return res.status(201).json(response({ status: 'Success', statusCode: '201', type: 'friend', message: req.t('friend-added'), data: friend }));
   }
   catch(error){

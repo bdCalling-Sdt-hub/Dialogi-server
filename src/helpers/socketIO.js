@@ -8,6 +8,8 @@ const { getDiscussionById, getReplyById } = require('../services/discussionServi
 const { getMySubscriptionById, getMySubscriptionByUserId, addMySubscription, updateMySubscription, addDefaultSubscription } = require('../services/mySubscriptionService');
 const { getUserById } = require('../services/userService');
 const { getSubscriptionById } = require('../services/subscriptionService');
+const { getQuestionById } = require('../services/questionService');
+const { addNotification } = require('../services/notificationService');
 require('dotenv').config();
 
 const socketIO = (io) => {
@@ -95,7 +97,7 @@ const socketIO = (io) => {
               await updateMySubscription(mySubscription._id, mySubscription);
               return callback({ status: "Success", message: "Category access granted", data: mySubscription });
             }
-            else{
+            else {
               return callback({ status: "Expired", message: "Your subscription expired", data: mySubscription });
             }
           }
@@ -108,11 +110,11 @@ const socketIO = (io) => {
               await updateMySubscription(mySubscription._id, mySubscription);
               return callback({ status: "Success", message: "Category access granted", data: mySubscription });
             }
-            else{
+            else {
               return callback({ status: "Expired", message: "Your subscription expired", data: mySubscription });
             }
           }
-          else{
+          else {
             return callback({ status: "Error", message: "Invalid type", data: null });
           }
         }
@@ -120,7 +122,7 @@ const socketIO = (io) => {
           return callback({ status: "Error", message: "User Id and Type is required", data: null });
         }
       }
-      catch(error) {
+      catch (error) {
         console.error("Error getting subscription:", error.message);
         logger.error(error.message, "socket -> access-status");
         return callback({ status: "Error", message: error.message, data: null });
@@ -213,7 +215,32 @@ const socketIO = (io) => {
             },
             message: "Chat created successfully",
           });
-          data.participants.forEach((participant) => {
+
+          if (data.question) {
+            const question = await getQuestionById(data?.question);
+
+            const newMessage = {
+              chat: chat._id,
+              message: question.question,
+              sender: data.groupAdmin,
+              messageType: "notice"
+            }
+            const updatedMessage = await addMessage(newMessage);
+            const eventName = `new-message::${chat._id.toString()}`;
+            io.emit(eventName, updatedMessage);
+          }
+          data.participants.forEach(async (participant) => {
+            const userNotification = {
+              message: "You have been added in " + data?.groupName + " -group",
+              receiver: participant,
+              linkId: chat._id,
+              type: 'group-request',
+              role: 'user',
+            }
+            const userNewNotification = await addNotification(userNotification);
+            const roomId = 'user-notification::' + participant.toString();
+            io.emit(roomId, userNewNotification)
+
             const roomID = 'chat-notification::' + participant.toString();
             io.emit(roomID, { status: "Success", message: "New chat created", data: null });
           });
@@ -241,7 +268,7 @@ const socketIO = (io) => {
         });
       }
       try {
-        data.messageType="normal"
+        data.messageType = "normal"
         const message = await addMessage(data);
         const eventName = 'new-message::' + data.chat.toString();
         socket.broadcast.emit(eventName, message);

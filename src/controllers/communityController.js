@@ -73,11 +73,10 @@ const joinCommunity = async (req, res) => {
     }
     const joinedCom = await addToCommunity(chatId, req.body.userId)
     if (joinedCom) {
-      const userData = await getUserById(req.body.userId);
       const newMessage = {
         chat: chatId,
         sender: req.body.userId,
-        message: userData.fullName + " has joined the chat"
+        message: req.body.userFullName + " has joined the chat"
       }
       const updatedMessage = await addMessage(newMessage);
       const eventName = `new-message::${chatId}`;
