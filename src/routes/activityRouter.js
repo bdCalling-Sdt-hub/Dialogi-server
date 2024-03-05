@@ -3,9 +3,7 @@ const { allActivity, deleteActivity } = require('../controllers/activityControll
 const { isValidUser } = require('../middlewares/auth');
 const router = express.Router();
 
-
 router.get('/', isValidUser, allActivity);
 router.delete('/:id', isValidUser, deleteActivity);
-
 
 module.exports = router;

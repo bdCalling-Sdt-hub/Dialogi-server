@@ -14,7 +14,7 @@ const allActivity = async (req, res) => {
         response({
           status: 'Error',
           statusCode: '401',
-          message: req.t('You are not authorised to get login activity'),
+          message: req.t('unauthorised'),
         })
       );
     }
@@ -29,7 +29,7 @@ const allActivity = async (req, res) => {
         status: 'OK',
         statusCode: '200',
         type: 'activity',
-        message: req.t('Activitys retrieved successfully'),
+        message: req.t('activity'),
         data: {
           activitys,
           pagination: {
@@ -49,7 +49,7 @@ const allActivity = async (req, res) => {
       response({
         status: 'Error',
         statusCode: '500',
-        message: req.t('Error getting activitys'),
+        message: req.t('server-error'),
       })
     );
   }
@@ -63,17 +63,17 @@ const deleteActivity = async (req, res) => {
         response({
           status: 'Error',
           statusCode: '401',
-          message: req.t('You are not authorised to delete login activity'),
+          message: req.t('unauthorised'),
         })
       );
     }
     const deleteActivity = await Activity.findOneAndDelete(id);
-    return res.status(201).json(response({ status: 'Deleted', statusCode: '201', type: 'activity', message: req.t('Activity deleted successfully.'), data: deleteActivity }));
+    return res.status(201).json(response({ status: 'Deleted', statusCode: '201', type: 'activity', message: req.t('activity'), data: deleteActivity }));
   }
   catch (error) {
     logger.error(error, req.originalUrl)
     console.error(error);
-    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'activity',message: req.t('Error deleted deleteActivity') }));
+    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'activity',message: req.t('server-error') }));
   }
 }
 

@@ -24,7 +24,7 @@ if (!fs.existsSync(UPLOADS_FOLDER_USERS)) {
 
 router.post('/', [uploadUsers.single("image")], convertHeicToPng(UPLOADS_FOLDER_USERS), isValidUser, addNewCategory);
 router.put('/:id', [uploadUsers.single("image")], convertHeicToPng(UPLOADS_FOLDER_USERS), isValidUser, updateCategoryById);
-router.get('/acess-type', allCategoriesByAccessType);
+router.get('/acess-type', isValidUser, allCategoriesByAccessType);
 router.get('/', allCategories);
 router.get('/:id', isValidUser,getCategory);
 

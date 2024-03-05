@@ -84,13 +84,19 @@ const getAllQuestions = async (filter, options) => {
   const category = new mongoose.Types.ObjectId(filter.category);
   const userId = new mongoose.Types.ObjectId(filter.userId);
   const subCategory = filter.subCategory;
+  var matchData = {
+    category: category,
+    subCategory: subCategory
+  }
+  var accessStatus = false;
+  if(filter.accessStatus!==undefined){
+    accessStatus = filter.accessStatus==='true'?true:false;
+    matchData.isEarlyAccessAvailable = accessStatus;
+  }
 
   const questions = await Question.aggregate([
     {
-      $match: {
-        category: category,
-        subCategory: subCategory
-      }
+      $match: matchData
     },
     { $skip: skip },
     { $limit: questionlimit },
@@ -231,10 +237,7 @@ const getAllQuestions = async (filter, options) => {
   ]);
 
   // Calculate pagination for questions
-  const totalResults = await Question.countDocuments({
-    category: category,
-    subCategory: subCategory
-  });
+  const totalResults = await Question.countDocuments(matchData);
   console.log(filter)
   const totalPages = Math.ceil(totalResults / questionlimit);
   const pagination = { totalResults, totalPages, currentPage: page, limit: questionlimit };

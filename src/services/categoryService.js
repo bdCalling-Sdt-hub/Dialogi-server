@@ -61,66 +61,72 @@ const getCategoryWithAccessStatus = async (filter, options) => {
     }
   ]);
 
-  const earlyAccessList = await Category.aggregate([
-    {
-      $lookup: {
-        from: "questions",
-        localField: "_id",
-        foreignField: "category",
-        as: "questions"
-      }
-    },
-    {
-      $match: {
-        "questions.isEarlyAccessAvailable": true
-      }
-    },
-    {
-      $project: {
-        _id: 1,
-        name: 1,
-        type: 1,
-        image: 1
-      }
-    },
-    {
-      $skip: skipEr
-    },
-    {
-      $limit: limitEr
-    }
-  ]);
-  
 
-  const totalResults = await Category.countDocuments(filter);
+  const totalResults = await Category.countDocuments();
   const totalPages = Math.ceil(totalResults / limit);
   const pagination = { totalResults, totalPages, currentPage: page, limit };
+  var earlyAccessList = [];
+  var paginationEr = {};
 
-  const totalResultsEr = await Category.aggregate([
-    {
-      $lookup: {
-        from: "questions",
-        localField: "_id",
-        foreignField: "category",
-        as: "questions"
+  if(filter.isEarlyAccessAvailable){
+    earlyAccessList = await Category.aggregate([
+      {
+        $lookup: {
+          from: "questions",
+          localField: "_id",
+          foreignField: "category",
+          as: "questions"
+        }
+      },
+      {
+        $match: {
+          "questions.isEarlyAccessAvailable": true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          type: 1,
+          image: 1
+        }
+      },
+      {
+        $skip: skipEr
+      },
+      {
+        $limit: limitEr
       }
-    },
-    {
-      $match: {
-        "questions.isEarlyAccessAvailable": true
+    ]);
+  
+    const totalResultsEr = await Category.aggregate([
+      {
+        $lookup: {
+          from: "questions",
+          localField: "_id",
+          foreignField: "category",
+          as: "questions"
+        }
+      },
+      {
+        $match: {
+          "questions.isEarlyAccessAvailable": true
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 }
+        }
       }
-    },
-    {
-      $group: {
-        _id: null,
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-  const totalPagesEr = Math.ceil(totalResultsEr[0].count / limitEr);
-  const paginationEr = { totalResults: totalResultsEr[0].count, totalPagesEr, currentPageEr: pageEr, limitEr };
+    ]);
+    const count = totalResultsEr[0]?.count !== undefined ? totalResultsEr[0].count : 0;
+    console.log(count, totalResultsEr[0]?.count);
+    const totalPagesEr = Math.ceil(count / limitEr);
+    paginationEr = { totalResults: count, totalPages: totalPagesEr, currentPage: pageEr, limit: limitEr };
+  }
 
-  return { categoryList, pagination, earlyAccessList, paginationEr};
+  return { categoryList, pagination, earlyAccessList, paginationEr };
 }
 
 const getCategoryByName = async (name) => {

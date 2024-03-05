@@ -2,6 +2,7 @@ require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
 const { addCategory, getAllCategorys, updateCategory, getCategoryByName, getCategoryById, deleteCategory, getCategoryWithAccessStatus } = require('../services/categoryService');
+const { getMySubscriptionByUserId } = require('../services/mySubscriptionService');
 
 const addNewCategory = async (req, res) => {
   try{
@@ -56,7 +57,11 @@ const allCategoriesByAccessType = async (req, res) => {
   try{
     const { page, limit, pageEr, limitEr } = req.query;
     const options = { page, limit, pageEr, limitEr };
-    const filter = {};
+    const mySubs = await getMySubscriptionByUserId(req.body.userId);
+    const filter = { isEarlyAccessAvailable: false };
+    if(mySubs && mySubs.isEarlyAccessAvailable===true){
+      filter.isEarlyAccessAvailable = true;
+    }
     const categorys = await getCategoryWithAccessStatus(filter, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('categorys'), data: categorys }));
   }
