@@ -194,6 +194,7 @@ const successPayment = async (req, res) => {
       type: 'payment',
       role: 'user',
     }
+
     const adminNotification = {
       message: "You have received " + amount + "$ from " + req.body.userFullName + " for " + name + " subscription.",
       receiver: req.body.userId,
@@ -201,11 +202,10 @@ const successPayment = async (req, res) => {
       type: 'payment',
       role: 'admin',
     }
+
     const adminNewNotification = await addNotification(adminNotification);
     io.emit("dialogi-admin-notification", { status: 1008, message: adminNewNotification.message })
     
-    
-
     const roomId = 'user-notification::' + req.body.userId.toString();
     const senderNotifationPart = await addNotification(senderNotifation);
     io.emit(roomId, senderNotifationPart)

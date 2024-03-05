@@ -64,6 +64,7 @@ const getMySubscriptionById = async (id) => {
 
 const getMySubscriptionByUserId = async (userId) => {
   try {
+    console.log('userId--->', userId);
     return await MySubscription.findOne({ user: userId });
   }
   catch (error) {

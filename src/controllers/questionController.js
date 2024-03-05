@@ -24,11 +24,12 @@ const addNewQuestion = async (req, res) => {
 
 const allQuestions = async (req, res) => {
   try{
-    const { page, discussionLimit, discussionPage } = req.query;
+    const { page, discussionLimit, discussionPage, accessStatus } = req.query;
     const options = { page, discussionLimit,discussionPage };
     const filter = {
       subCategory: req.params.subCategory,
-      category: req.params.category
+      category: req.params.category,
+      accessStatus: accessStatus
     };
     console.log(req.body.userId);
     if(req.body.userId){

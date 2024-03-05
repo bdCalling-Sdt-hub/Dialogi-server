@@ -16,6 +16,7 @@ const messageRouter = require('./routes/messageRouter');
 const favouriteRouter = require('./routes/favouriteRouter');
 const notificationRouter = require('./routes/notificationRouter');
 const actvityRouter = require('./routes/activityRouter');
+const path = require('path');
 
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 const mongoose = require('mongoose');
@@ -56,12 +57,18 @@ const i18next = require('i18next');
 const i18nextMiddleware = require('i18next-http-middleware');
 const Backend = require('i18next-node-fs-backend');
 
+let translationPath = __dirname + '/translation/{{lng}}/translation.json';
+
+if (process.env.NODE_ENV === 'production') {
+  translationPath = path.resolve(__dirname, 'dist', 'translation/{{lng}}/translation.json');
+}
+
 i18next
   .use(Backend)
   .use(i18nextMiddleware.LanguageDetector)
   .init({
     backend: {
-      loadPath: __dirname + '/translation/{{lng}}/translation.json',
+      loadPath:translationPath
     },
     detection: {
       order: ['header'],

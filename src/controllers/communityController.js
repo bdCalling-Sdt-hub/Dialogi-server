@@ -6,17 +6,18 @@ const { addChat, getChatByParticipants, addToCommunity, getChatById, getParticip
 const { getUserById } = require('../services/userService');
 const { addMessage } = require('../services/messageService');
 const { addMultipleNofiications, addNotification } = require('../services/notificationService');
+const { getQuestionById } = require('../services/questionService');
 
 const addCommunityRequest = async (req, res) => {
   try {
-    var { participants, category, groupName } = req.body;
+    var { participants, category, groupName, question } = req.body;
     participants = JSON.parse(participants);
     console.log(req.body, participants);
     if (req.body.userRole !== "user" && req.body.userSubscription !== "premium-plus") {
       return res.status(403).json(response({ status: 'Error', statusCode: '403', message: req.t('unauthorized') }));
     }
     const existingCom = await getCommunityStatusByUserId(req.body.userId, category, groupName);
-    if(existingCom){
+    if (existingCom) {
       return res.status(400).json(response({ status: 'Error', statusCode: '400', message: req.t('already-exists'), data: existingCom }));
     }
     const chatData = {
@@ -37,19 +38,34 @@ const addCommunityRequest = async (req, res) => {
         sendTo: 'user'
       }
     });
-    const result = await addMultipleCommunityRequest(data);
+
+    const questionDetails = await getQuestionById(question);
+
+    const newMessage = {
+      chat: newGroup._id,
+      message: questionDetails.question,
+      sender: req.body.userId,
+      messageType: "question"
+    }
+    const updatedMessage = await addMessage(newMessage);
+    const eventName = `new-message::${newGroup._id.toString()}`;
+    io.emit(eventName, updatedMessage);
+
+    await addMultipleCommunityRequest(data);
 
     participants.forEach(async participant => {
-      const notification = {
-        message: `You have a new community request from ${groupName}`,
-        receiver: participant,
-        linkId: newGroup._id, // Assuming newGroup is defined elsewhere in your code
-        type: 'community-request',
-        role: 'user',
-      };
-      const updatedNotification = await addNotification(notification);
-      const eventName = `user-notification::${participant}`;
-      io.emit(eventName, updatedNotification);
+      if(req.body.userId.toString() !== participant){
+        const notification = {
+          message: `You have a new community request from ${groupName}`,
+          receiver: participant,
+          linkId: newGroup._id, // Assuming newGroup is defined elsewhere in your code
+          type: 'community-request',
+          role: 'user',
+        };
+        const updatedNotification = await addNotification(notification);
+        const eventName = `user-notification::${participant}`;
+        io.emit(eventName, updatedNotification);
+      }
     });
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('community-request-sent'), data: newGroup }));
   }
@@ -76,13 +92,14 @@ const joinCommunity = async (req, res) => {
       const newMessage = {
         chat: chatId,
         sender: req.body.userId,
-        message: req.body.userFullName + " has joined the chat"
+        message: req.body.userFullName + " has joined the chat",
+        messageType: "notice"
       }
       const updatedMessage = await addMessage(newMessage);
       const eventName = `new-message::${chatId}`;
       //sending the join message to group
       io.emit(eventName, updatedMessage);
-      return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('community-joined') }));
+      return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('community-joined'), data: {chat: chatId} }));
     }
     return res.status(400).json(response({ status: 'Error', statusCode: '400', message: req.t('community-join-failed') }));
   }
