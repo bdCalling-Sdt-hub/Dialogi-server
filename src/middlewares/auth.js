@@ -1,22 +1,31 @@
 const jwt = require('jsonwebtoken');
 const response = require("../helpers/response");
 const logger = require('../helpers/logger');
+const Activity = require('../models/Activity');
 
 const isValidUser = async (req, res, next) => {
     try {
         const { authorization } = req.headers;
         let token;
         let decodedData;
+        let activity;
         if (authorization && authorization.startsWith("Bearer")) {
             token = authorization.split(" ")[1];
             decodedData = jwt.verify(token, process.env.JWT_ACCESS_TOKEN);
+            if (decodedData.role === 'admin' && decodedData.activityId!==null) {
+                activity = await Activity.findById(decodedData.activityId)
+            }
         }
         if (!authorization || !decodedData) {
+            return res.status(401).json(response({ status: 'Unauthorised', statusCode: '401', type: 'auth', message: req.t('unauthorised') }));
+        }
+        if (decodedData.role === 'admin' && !activity) {
             return res.status(401).json(response({ status: 'Unauthorised', statusCode: '401', type: 'auth', message: req.t('unauthorised') }));
         }
         req.body.userId = decodedData._id;
         req.body.userRole = decodedData.role;
         req.body.userEmail = decodedData.email;
+        req.body.userFullName = decodedData.userFullName;
         req.body.userSubscription = decodedData.subscription;
         next();
     } catch (error) {

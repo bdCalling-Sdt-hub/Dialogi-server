@@ -3,7 +3,7 @@ const Category = require('../models/Category');
 const addCategory = async (categoryBody) => {
   try {
     var category = await getCategoryByName(categoryBody.name);
-    if(category){
+    if (category) {
       return null;
     }
     category = new Category(categoryBody);
@@ -18,6 +18,111 @@ const getCategoryById = async (id) => {
   return await Category.findById(id);
 }
 
+const getCategoryWithAccessStatus = async (filter, options) => {
+  const page = Number(options.page) || 1;
+  const limit = Number(options.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const pageEr = Number(options.pageEr) || 1;
+  const limitEr = Number(options.limitEr) || 10;
+  const skipEr = (pageEr - 1) * limitEr;
+
+  const categoryList = await Category.aggregate([
+    // Match all documents
+    {
+      $match: {}
+    },
+    // Lookup categories from questions
+    {
+      $lookup: {
+        from: 'questions',
+        localField: '_id',
+        foreignField: 'category',
+        as: 'questions'
+      }
+    },
+    // Project necessary fields
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        type: 1,
+        isEarlyAccessAvailable: 1,
+        image: 1,
+        questionCount: { $size: "$questions" }
+      }
+    },
+    // Skip and limit for pagination
+    {
+      $skip: skip
+    },
+    {
+      $limit: limit
+    }
+  ]);
+
+  const earlyAccessList = await Category.aggregate([
+    {
+      $lookup: {
+        from: "questions",
+        localField: "_id",
+        foreignField: "category",
+        as: "questions"
+      }
+    },
+    {
+      $match: {
+        "questions.isEarlyAccessAvailable": true
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        type: 1,
+        image: 1
+      }
+    },
+    {
+      $skip: skipEr
+    },
+    {
+      $limit: limitEr
+    }
+  ]);
+  
+
+  const totalResults = await Category.countDocuments(filter);
+  const totalPages = Math.ceil(totalResults / limit);
+  const pagination = { totalResults, totalPages, currentPage: page, limit };
+
+  const totalResultsEr = await Category.aggregate([
+    {
+      $lookup: {
+        from: "questions",
+        localField: "_id",
+        foreignField: "category",
+        as: "questions"
+      }
+    },
+    {
+      $match: {
+        "questions.isEarlyAccessAvailable": true
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+  const totalPagesEr = Math.ceil(totalResultsEr[0].count / limitEr);
+  const paginationEr = { totalResults: totalResultsEr[0].count, totalPagesEr, currentPageEr: pageEr, limitEr };
+
+  return { categoryList, pagination, earlyAccessList, paginationEr};
+}
+
 const getCategoryByName = async (name) => {
   return await Category.findOne({ name: name });
 }
@@ -26,7 +131,7 @@ const getAllCategorys = async (filter, options) => {
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
-  
+
   const categoryList = await Category.aggregate([
     // Match all documents
     {
@@ -69,20 +174,20 @@ const getAllCategorys = async (filter, options) => {
 }
 
 
-const updateCategory = async (categoryId,categorybody) => {
-  try{
+const updateCategory = async (categoryId, categorybody) => {
+  try {
     return await Category.findByIdAndUpdate(categoryId, categorybody, { new: true });
   }
-  catch(error){
+  catch (error) {
     throw error;
   }
 }
 
 const deleteCategory = async (categoryId) => {
-  try{
+  try {
     return await Category.findByIdAndDelete(categoryId);
   }
-  catch(error){
+  catch (error) {
     throw error;
   }
 }
@@ -93,5 +198,6 @@ module.exports = {
   updateCategory,
   getCategoryByName,
   getAllCategorys,
-  deleteCategory
+  deleteCategory,
+  getCategoryWithAccessStatus
 }

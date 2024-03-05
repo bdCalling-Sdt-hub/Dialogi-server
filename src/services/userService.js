@@ -49,7 +49,6 @@ const deleteAccount = async (userId) => {
   catch(error){
     throw error;
   }
-
 }
 
 const updateUser = async (userId,userbody) => {

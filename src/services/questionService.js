@@ -21,11 +21,27 @@ const getAllSubCategories = async (filter, options) => {
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
   const category = new mongoose.Types.ObjectId(filter.category);
+  var earlyAccess;
+  if(filter.accessStatus){
+    if(filter.accessStatus==='true'){
+      earlyAccess = true;
+    }
+    else{
+      earlyAccess = false;
+    }
+  }
+
+  const matchCriteria = {
+    category: category,
+  }
+  if(filter.accessStatus){
+    matchCriteria.isEarlyAccessAvailable = earlyAccess;
+  }
 
   try {
     // Aggregate pipeline to get subcategories with count
     const aggregationPipeline = [
-      { $match: { category: category } },
+      { $match:  matchCriteria},
       { $group: { _id: { subCategory: '$subCategory' }, count: { $sum: 1 } } },
       { $project: { _id: 0, subCategory: '$_id.subCategory', count: 1 } }, // Project to reshape documents
       { $skip: skip },
@@ -190,7 +206,7 @@ const getAllQuestions = async (filter, options) => {
               $expr: {
                 $and: [
                   { $eq: ['$question', '$$questionId'] },
-                  { $eq: ['$user', userId] }
+                  { $eq: ['$user', userId] } // Match favorites of the specific user
                 ]
               }
             }
@@ -201,7 +217,7 @@ const getAllQuestions = async (filter, options) => {
     },
     {
       $addFields: {
-        isFavourite: { $cond: { if: { $gt: [{ $size: '$userFavourites' }, 0] }, then: true, else: false } }
+        isFavourite: { $gt: [{ $size: '$userFavourites' }, 0] }
       }
     },
     {
@@ -209,13 +225,17 @@ const getAllQuestions = async (filter, options) => {
         question: 1,
         subCategory: 1,
         discussions: 1,
-        isFavourite: 1
+        isFavourite: 1,
       }
     }
   ]);
 
   // Calculate pagination for questions
-  const totalResults = await Question.countDocuments(filter);
+  const totalResults = await Question.countDocuments({
+    category: category,
+    subCategory: subCategory
+  });
+  console.log(filter)
   const totalPages = Math.ceil(totalResults / questionlimit);
   const pagination = { totalResults, totalPages, currentPage: page, limit: questionlimit };
 

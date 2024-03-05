@@ -14,6 +14,8 @@ const paymentRouter = require('./routes/paymentRouter');
 const friendRouter = require('./routes/friendRouter');
 const messageRouter = require('./routes/messageRouter');
 const favouriteRouter = require('./routes/favouriteRouter');
+const notificationRouter = require('./routes/notificationRouter');
+const actvityRouter = require('./routes/activityRouter');
 
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 const mongoose = require('mongoose');
@@ -85,6 +87,8 @@ app.use('/api/subscriptions', subscriptionRouter);
 app.use('/api/payments', paymentRouter);
 app.use('/api/friends', friendRouter);
 app.use('/api/favourites', favouriteRouter);
+app.use('/api/notifications', notificationRouter);
+app.use('/api/activities', actvityRouter);
 
 //testing API is alive
 app.get('/test', (req, res) => {

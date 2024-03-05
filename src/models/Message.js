@@ -20,6 +20,11 @@ const messageSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
       required: false,
+    },
+    messageType:{
+      type: String,
+      enum: ["normal", "notice", "question"],
+      default: "normal"
     }
   },
   {

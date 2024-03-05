@@ -22,11 +22,12 @@ const User = require('../models/User');
 const Category = require('../models/Category');
 const Payment = require('../models/Payment');
 const NodeCache = require('node-cache');
+const Activity = require('../models/Activity');
 const cache = new NodeCache();
 
 const generateWeekList = (last7DaysStart) => {
   const weekList = [];
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 1; i <= 7; i++) {
     const currentDate = new Date(last7DaysStart);
     currentDate.setDate(currentDate.getDate() + i);
     const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
@@ -110,7 +111,10 @@ const signUp = async (req, res) => {
       const sendNotification = await addNotification(notification);
       io.emit('dialogi-admin-notification', { status: 1008, message: sendNotification.message })
 
-      return res.status(201).json(response({ status: 'OK', statusCode: '201', type: 'user', message: req.t('user-verified'), data: registeredUser }));
+      const accessToken = jwt.sign({userFullName: registeredUser.fullName, _id: registeredUser._id, email: registeredUser.email, role: registeredUser.role, subscription: registeredUser.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+      const refreshToken = jwt.sign({userFullName: registeredUser.fullName, _id: registeredUser._id, email: registeredUser.email, role: registeredUser.role, subscription: registeredUser.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
+
+      return res.status(201).json(response({ status: 'OK', statusCode: '201', type: 'user', message: req.t('user-verified'), data: registeredUser, accessToken: accessToken, refreshToken: refreshToken }));
     }
   } catch (error) {
     console.error(error);
@@ -134,8 +138,56 @@ const signIn = async (req, res) => {
 
     const user = await login(email, password);
     if (user && !user?.isBlocked) {
-      const token = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
-      const refreshToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
+      let activityId = null
+    if (user.role === 'admin') {
+      function extractDeviceModel(userAgent) {
+        const regex = /\(([^)]+)\)/;
+        const matches = userAgent.match(regex);
+
+        if (matches && matches.length >= 2) {
+          return matches[1];
+        } else {
+          return 'Unknown';
+        }
+      }
+
+      const userA = req.headers['user-agent'];
+
+      const deviceModel = extractDeviceModel(userA);
+
+
+      function getBrowserInfo(userAgent) {
+        const ua = userAgent.toLowerCase();
+
+        if (ua.includes('firefox')) {
+          return 'Firefox';
+        } else if (ua.includes('edg')) {
+          return 'Edge';
+        } else if (ua.includes('safari') && !ua.includes('chrome')) {
+          return 'Safari';
+        } else if (ua.includes('opr') || ua.includes('opera')) {
+          return 'Opera';
+        } else if (ua.includes('chrome')) {
+          return 'Chrome';
+        } else {
+          return 'Unknown';
+        }
+      }
+      // const deviceNameOrModel = req.headers['user-agent'];
+      const userAgent = req.get('user-agent');
+      const browser = getBrowserInfo(userAgent);
+      const activity = await Activity.create({
+        operatingSystem: deviceModel,
+        browser,
+        userId: user._id
+      });
+      console.log(activity)
+      activityId = activity._id
+    }
+
+
+      const token = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription, activityId: activityId }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+      const refreshToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
       return res.status(200).json(response({ statusCode: '200', message: req.t('login-success'), status: "OK", type: "user", data: user, accessToken: token, refreshToken: refreshToken }));
     }
     if (user && user?.isBlocked) {
@@ -156,7 +208,7 @@ const signInWithRefreshToken = async (req, res) => {
     if (!user || (user && user.isBlocked)) {
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
     }
-    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+    const accessToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
   } catch (error) {
     console.error(error);
@@ -166,7 +218,6 @@ const signInWithRefreshToken = async (req, res) => {
 };
 
 const signInWithProvider = async (req, res) => {
-  console.log(req.body)
   try {
     var user = await getUserByEmail(req.body.email);
     if (!user) {
@@ -178,7 +229,7 @@ const signInWithProvider = async (req, res) => {
       }
       user = await addUser(user);
     }
-    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+    const accessToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
 
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
   } catch (error) {
@@ -418,7 +469,6 @@ const getProfileDetails = async (req, res) => {
     const userDetails = await getUserById(id);
     const profileDetails = [userDetails._id, req.body.userId]
     const frinedStatus = await getFriendByParticipants(profileDetails);
-    console.log(frinedStatus)
     var friendRequestStatus = "rejected";
     if (frinedStatus) {
       friendRequestStatus = frinedStatus.status;
@@ -453,8 +503,8 @@ const addPasscode = async (req, res) => {
     }
     userData.passcode = passcode;
     await userData.save();
-    const accessToken = jwt.sign({ _id: tokenData.userId._id, email: tokenData.userId.email, role: tokenData.userId.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
-    const refreshToken = jwt.sign({ _id: userData._id, email: userData.email, role: userData.role }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
+    const accessToken = jwt.sign({userFullName: tokenData.fullName, _id: tokenData.userId._id, email: tokenData.userId.email, role: tokenData.userId.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+    const refreshToken = jwt.sign({userFullName: tokenData.fullName, _id: userData._id, email: userData.email, role: userData.role }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-added'), data: userData, accessToken: accessToken, refreshToken: refreshToken }));
   }
   catch (error) {
@@ -550,7 +600,7 @@ const signInWithPasscode = async (req, res) => {
     if (!user || (user && user.role !== 'user') || (user && user.isBlocked)) {
       return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised'), status: "Error" }));
     }
-    const accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+    const accessToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
   }
   catch (error) {
@@ -561,6 +611,8 @@ const signInWithPasscode = async (req, res) => {
 }
 
 const updateProfile = async (req, res) => {
+  console.log(req.body)
+  console.log(req.file)
   try {
     const { fullName, dateOfBirth, address } = req.body;
     const user = await getUserById(req.body.userId);
@@ -583,6 +635,9 @@ const updateProfile = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
+    if(req.file){
+      unlinkImage(req.file.path)
+    }
     return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
@@ -743,7 +798,19 @@ const dashboardCounts = async (req, res) => {
       const expirationTime = getNextDayStart(); // Get expiration time in seconds
       cache.set('weekList', weekList, expirationTime);
     }
-   
+
+    const result = await Payment.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$paymentData.amount' } // Sum up the amount field from paymentData
+        }
+      }
+    ]);
+
+    // Extract the total amount from the result
+    const totalAmount = result.length > 0 ? result[0].totalAmount : 0;
+
 
     paymentInfo.forEach(payment => {
       const paymentDay = payment.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
@@ -752,10 +819,6 @@ const dashboardCounts = async (req, res) => {
         weekList[dayIndex].income += payment.paymentData.amount;
       }
     });
-
-    console.log(weekList)
-
-
     return res.status(200).json(response({
       statusCode: '200', message: req.t('dashboard-counts'), status: "OK", data: {
         totalUsers,
@@ -768,7 +831,8 @@ const dashboardCounts = async (req, res) => {
         plusPercentage: (totalPremiumsPlus / last7DaysUsers) * 100,
         today: new Date(),
         last7DaysStart,
-        weekList
+        weekList,
+        totalAmount
       }
     }));
   }
@@ -779,4 +843,26 @@ const dashboardCounts = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts }
+const getPremiumPlusUsers = async (req, res) => {
+  try {
+    if (req.body.userRole !== 'user') {
+      return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised'), status: "Error" }));
+    }
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const filter = {
+      role: 'user',
+      subscription: 'premium-plus',
+    };
+    const options = { page, limit };
+    const { userList, pagination } = await getAllUsers(filter, options);
+    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-list'), data: { userList, pagination } }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error, req.originalUrl)
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
+  }
+}
+
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts, getPremiumPlusUsers }

@@ -8,6 +8,7 @@ const { addPayment } = require('../services/paymentService');
 const { getUserById } = require('../services/userService');
 const { addMySubscription } = require('../services/mySubscriptionService');
 const Payment = require('../models/Payment');
+const { addNotification } = require('../services/notificationService');
 
 
 // const makePaymentWithStripe = async (req, res) => {
@@ -156,7 +157,7 @@ async function addPaymentInfo(userId, paymentData, subscriptionId) {
 
       myUpdatedSubscription = await addMySubscription(mySubscription);
 
-      accessToken = jwt.sign({ _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
+      accessToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1d' });
     }
     return { paymentInfo, myUpdatedSubscription, accessToken };
   }
@@ -185,6 +186,30 @@ const successPayment = async (req, res) => {
       }
     }
     const { paymentInfo, myUpdatedSubscription, accessToken } = await addPaymentInfo(req.body.userId, paymentData, subscriptionId);
+    
+    const senderNotifation = {
+      message: "Your payment is successful",
+      receiver: req.body.userId,
+      linkId: paymentInfo._id,
+      type: 'payment',
+      role: 'user',
+    }
+    const adminNotification = {
+      message: "You have received " + amount + "$ from " + req.body.userFullName + " for " + name + " subscription.",
+      receiver: req.body.userId,
+      linkId: paymentInfo._id,
+      type: 'payment',
+      role: 'admin',
+    }
+    const adminNewNotification = await addNotification(adminNotification);
+    io.emit("dialogi-admin-notification", { status: 1008, message: adminNewNotification.message })
+    
+    
+
+    const roomId = 'user-notification::' + req.body.userId.toString();
+    const senderNotifationPart = await addNotification(senderNotifation);
+    io.emit(roomId, senderNotifationPart)
+
     return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'payment', message: req.t('payment-success'), data: { paymentInfo, myUpdatedSubscription }, accessToken: accessToken }));
   } catch (error) {
     console.error(error);
@@ -218,7 +243,6 @@ const paymentList = async (req, res) => {
     const totalAmount = result.length > 0 ? result[0].totalAmount : 0;
 
     if (paymentType === 'today') {
-      console.log('today-----------');
       endDate = new Date(new Date().setDate(startDate.getDate() - 1));
       paymentData = await Payment.find({ createdAt: { $gte: endDate, $lte: startDate } }).select('paymentData user createdAt').populate('user', 'fullName image email').skip(skip).limit(limit).sort({ createdAt: -1 });
       const totalResults = await Payment.countDocuments({ createdAt: { $gte: endDate, $lte: startDate } });
@@ -241,7 +265,7 @@ const paymentList = async (req, res) => {
           }
         }
       ]);
-  
+
       // Extract the total amount from the result
       totalIncome = result.length > 0 ? result[0].totalAmount : 0;
     }
@@ -267,14 +291,14 @@ const paymentList = async (req, res) => {
           }
         }
       ]);
-  
+
       // Extract the total amount from the result
       totalIncome = result.length > 0 ? result[0].totalAmount : 0;
     }
     if (paymentType === 'monthly') {
       const endDate = new Date();
       endDate.setFullYear(startDate.getFullYear() - 1);
-    
+
       paymentData = await Payment.aggregate([
         {
           $match: {
@@ -283,7 +307,7 @@ const paymentList = async (req, res) => {
         },
         {
           $sort: { createdAt: 1 } // Sort by createdAt in ascending order
-      },
+        },
         {
           $group: {
             _id: {
@@ -292,6 +316,12 @@ const paymentList = async (req, res) => {
             },
             totalAmount: { $sum: '$paymentData.amount' },
             totalUsers: { $sum: 1 } // Counting documents in each group
+          }
+        },
+        {
+          $sort: {
+            '_id.year': -1,
+            '_id.month': -1
           }
         },
         {

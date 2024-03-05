@@ -6,7 +6,8 @@ const mySubscriptionSchema = new mongoose.Schema({
 
   //show add
   isAddAvailable: { type: Boolean, default: false },
-
+  addFrequency: { type: Number, default: 0 },
+  
   //category access
   categoryAccessNumber: { type: Number, default: 0 },
   isCategoryAccessUnlimited: { type: Boolean, default: false },
@@ -27,6 +28,7 @@ const mySubscriptionSchema = new mongoose.Schema({
   updateProfileAccess: { type: Boolean, default: false },
 
   expiryTime: { type: Number, dafault: 1 },
+  questionAccessed: { type: Number, default: 0 },
 }, { timestamps: true }
 );
 

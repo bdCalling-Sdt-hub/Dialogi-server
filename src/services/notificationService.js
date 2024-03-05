@@ -10,6 +10,14 @@ const addNotification = async (notificationBody) => {
   }
 }
 
+const addMultipleNofiications = async (data) => {
+  try {
+    return await Notification.insertMany(data);
+  } catch (error) {
+    throw error;
+  }
+}
+
 const getNotificationById = async (id) => {
   return await Notification.findById(id);
 }
@@ -26,6 +34,7 @@ const getNotifications = async (filter, options) => {
 
 module.exports = {
   addNotification,
+  addMultipleNofiications,
   getNotificationById,
   getNotifications
 }

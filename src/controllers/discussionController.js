@@ -35,38 +35,6 @@ const addNewReply = async (req, res) => {
   }
 }
 
-const allDiscussions = async (req, res) => {
-  try{
-    const { page, limit } = req.query;
-    const options = { page, limit };
-    const filter = {
-      question: req.params.question
-    };
-    const discussions = await getAllDiscussions(filter, options);
-    return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('discussions'), data: discussions }));
-  }
-  catch(error){
-    console.error(error);
-    logger.error(error.message, req.originalUrl);
-    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'discussion', message: req.t('server-error') }));
-  }
-}
-
-const allReplies = async (req, res) => {
-  try{
-    const { page, limit } = req.query;
-    const options = { page, limit };
-    const filter = {};
-    const replies = await getAllReplies(filter, options);
-    return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'reply', message: req.t('replies'), data: replies }));
-  }
-  catch(error){
-    console.error(error);
-    logger.error(error.message, req.originalUrl);
-    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'discussion', message: req.t('server-error') }));
-  }
-}
-
 const updateDiscussionById = async (req, res) => {
   try{
     const discussion = await getDiscussionById(req.params.id);
@@ -113,4 +81,4 @@ const getDiscussionDetails = async (req, res) => {
   }
 }
 
-module.exports = { addNewDiscussion, allDiscussions, updateDiscussionById, deleteDiscussionById, getDiscussionDetails, addNewReply, allReplies }
+module.exports = { addNewDiscussion, updateDiscussionById, deleteDiscussionById, getDiscussionDetails, addNewReply}
