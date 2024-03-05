@@ -853,6 +853,7 @@ const getPremiumPlusUsers = async (req, res) => {
     const filter = {
       role: 'user',
       subscription: 'premium-plus',
+      _id: { $ne: req.body.userId }
     };
     const options = { page, limit };
     const { userList, pagination } = await getAllUsers(filter, options);

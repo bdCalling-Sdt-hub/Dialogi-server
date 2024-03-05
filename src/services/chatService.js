@@ -54,7 +54,6 @@ const getChatByParticipants = async (data) => {
       filters.groupName = data.groupName;
     }
     const ndata = await Chat.findOne(filters);
-    console.log('data--->', ndata, data);
     return ndata;
   }
   catch(error){
