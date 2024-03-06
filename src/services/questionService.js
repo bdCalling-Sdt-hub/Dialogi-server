@@ -229,6 +229,8 @@ const getAllQuestions = async (filter, options) => {
     {
       $project: {
         question: 1,
+        questionGr: 1,
+        isEarlyAccessAvailable: 1,
         subCategory: 1,
         discussions: 1,
         isFavourite: 1,

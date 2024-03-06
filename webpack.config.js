@@ -6,6 +6,9 @@ const Dotenv = require('dotenv-webpack');
 module.exports = {
   mode: 'production', // or 'development' if you prefer
   entry: './src/server.js', // entry point of your application
+  stats: {
+    errorDetails: true,
+  },
   output: {
     path: path.resolve(__dirname, 'dist'), // output directory
     filename: 'index.js' // output bundle filename

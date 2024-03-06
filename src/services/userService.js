@@ -20,53 +20,61 @@ const getUserByEmail = async (email) => {
 }
 
 const getAllUsers = async (filter, options) => {
-  const {page=1, limit=10} = options;
+  const { page = 1, limit = 10 } = options;
   const skip = (page - 1) * limit;
-  const userList = await User.find(filter).skip(skip).limit(limit).sort({createdAt: -1});
+  const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
   const totalResults = await User.countDocuments(filter);
-  const totalUsers = await User.countDocuments({role:'user'});
+  const totalUsers = await User.countDocuments({ role: 'user' });
   const totalPages = Math.ceil(totalResults / limit);
-  const pagination = {totalResults, totalPages, currentPage: page, limit, totalUsers};
-  return {userList, pagination};
+  const pagination = { totalResults, totalPages, currentPage: page, limit, totalUsers };
+  return { userList, pagination };
 }
 
 const getSpecificUsers = async (filter, options) => {
-  const {page=1, limit=10} = options;
+  const { page = 1, limit = 10 } = options;
   const skip = (page - 1) * limit;
-  const userList = await User.find(filter).skip(skip).limit(limit).sort({createdAt: -1});
+  const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
   const totalResults = await User.countDocuments(filter);
-  const totalUsers = await User.countDocuments({role:'user'});
+  const totalUsers = await User.countDocuments({ role: 'user' });
   const totalPages = Math.ceil(totalResults / limit);
-  const pagination = {totalResults, totalPages, currentPage: page, limit, totalUsers};
-  return {userList, pagination};
+  const pagination = { totalResults, totalPages, currentPage: page, limit, totalUsers };
+  return { userList, pagination };
 }
 
 const login = async (email, password) => {
-  const user = await User.findOne({ email });
-  if (!user) {
-    return null;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return null;
+    }
+    if(user && user.loginInWithProvider===true){
+      return user;
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return null;
+    }
+    return user;
   }
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return null;
-  }
-  return user;
-}
-
-const deleteAccount = async (userId) => {
-  try{
-    return await User.findByIdAndDelete(userId);
-  }
-  catch(error){
+  catch (error) {
     throw error;
   }
 }
 
-const updateUser = async (userId,userbody) => {
-  try{
+const deleteAccount = async (userId) => {
+  try {
+    return await User.findByIdAndDelete(userId);
+  }
+  catch (error) {
+    throw error;
+  }
+}
+
+const updateUser = async (userId, userbody) => {
+  try {
     return await User.findByIdAndUpdate(userId, userbody, { new: true });
   }
-  catch(error){
+  catch (error) {
     throw error;
   }
 }
