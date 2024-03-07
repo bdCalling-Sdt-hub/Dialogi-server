@@ -1,6 +1,8 @@
 const { error } = require('../helpers/logger');
 const Chat = require('../models/Chat');
 const mongoose = require('mongoose');
+const Message = require('../models/Message');
+const CommunityRequest = require('../models/CommunityRequest');
 
 const addChat = async (chatBody) => {
   try {
@@ -166,10 +168,12 @@ const getChatByParticipantId = async (filters, options) => {
 
 const getChatMembersByChatId = async (filters) => {
   const chatId = filters.chat;
-
-  const chat = await Chat.findById(chatId).populate('participants', 'fullName image');
   
-  return chat.participants;
+  const chat = await Chat.findById(chatId).populate('participants', 'fullName image');
+  if(chat && chat.participants?.length > 0){
+    return chat.participants;
+  }
+  return null;
 }
 
 const leaveGroup = async (chatId, userId) => {
@@ -207,9 +211,18 @@ const getChat = async (filters, options) => {
   return { chatList, pagination };
 }
 
-const deleteChatByUserId = async (userId) => {
-  const chat = await Chat.deleteMany({ participants: { $in: [userId] } });
+const deleteChatById = async (chatId) => {
+  const chat = await Chat.findByIdAndDelete(chatId);
+  await Message.deleteMany({ chat: chatId });
+  await CommunityRequest.deleteMany({ chat: chatId })
   return chat;
+}
+
+const deleteChatForDeletedUser= async (userId) => {
+  await Chat.deleteMany({groupAdmin: userId, type:{$in:["group","community"]}});
+  await Chat.updateMany({ participants: { $in: [userId] } }, { $pull: { participants: userId } });
+  await CommunityRequest.deleteMany({ user: userId });
+  return;
 }
 
 const getCommunityStatusByUserId = async (userId, category, groupName) => {
@@ -229,8 +242,9 @@ module.exports = {
   leaveGroup,
   getChatByParticipants,
   getChatByParticipantId,
-  deleteChatByUserId,
+  deleteChatById,
   getChatById,
   getChatMembersByChatId,
-  getParticipantStatus
+  getParticipantStatus,
+  deleteChatForDeletedUser
 }

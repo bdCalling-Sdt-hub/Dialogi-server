@@ -54,7 +54,7 @@ const addCommunityRequest = async (req, res) => {
     await addMultipleCommunityRequest(data);
 
     participants.forEach(async participant => {
-      if(req.body.userId.toString() !== participant){
+      if (req.body.userId.toString() !== participant) {
         const notification = {
           message: `You have a new community request from ${groupName}`,
           receiver: participant,
@@ -78,17 +78,14 @@ const addCommunityRequest = async (req, res) => {
 
 const joinCommunity = async (req, res) => {
   try {
-    const { chatId } = req.body;
+    const { chatId, question } = req.body;
     const getCommunity = await getChatById(chatId);
     if (!getCommunity) {
       return res.status(404).json(response({ status: 'Not Found', statusCode: '404', data: null }));
     }
-    const existingCom = await getParticipantStatus(chatId, req.body.userId, "community");
-    if (existingCom) {
-      return res.status(400).json(response({ status: 'Error', statusCode: '400', message: req.t('already-joined'), data: existingCom }));
-    }
-    const joinedCom = await addToCommunity(chatId, req.body.userId)
-    if (joinedCom) {
+    var existingCom = await getParticipantStatus(chatId, req.body.userId, "community");
+    if (!existingCom) {
+      existingCom = await addToCommunity(chatId, req.body.userId)
       const newMessage = {
         chat: chatId,
         sender: req.body.userId,
@@ -99,7 +96,19 @@ const joinCommunity = async (req, res) => {
       const eventName = `new-message::${chatId}`;
       //sending the join message to group
       io.emit(eventName, updatedMessage);
-      return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('community-joined'), data: {chat: chatId} }));
+    }
+    if (existingCom) {
+      const questionDetails = await getQuestionById(question);
+      const newMessage = {
+        chat: chatId,
+        message: questionDetails.question,
+        sender: req.body.userId,
+        messageType: "question"
+      }
+      const updatedMessage = await addMessage(newMessage);
+      const eventName = `new-message::${chatId}`;
+      io.emit(eventName, updatedMessage);
+      return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('community-joined'), data: { chat: chatId } }));
     }
     return res.status(400).json(response({ status: 'Error', statusCode: '400', message: req.t('community-join-failed') }));
   }
@@ -121,7 +130,7 @@ const getCommunityRequestForUser = async (req, res) => {
       status: "pending"
     };
     const result = await getCommunityRequest(filter, options);
-    return res.status(200).json(response({ status: 'Success', statusCode: '200', data: result }));
+    return res.status(200).json(response({ status: 'Success', statusCode: '200', data: result, message: req.t('community-request') }));
   }
   catch (error) {
     console.error(error);
@@ -157,6 +166,16 @@ const CommunityRequestDecision = async (req, res) => {
     console.log(req.body.status);
     if (req.body.status === "accepted") {
       const newCommunity = await addToCommunity(cmReq.chat, req.body.userId);
+      const newMessage = {
+        chat: cmReq.chat,
+        sender: req.body.userId,
+        message: req.body.userFullName + " has joined the chat",
+        messageType: "notice"
+      }
+      const updatedMessage = await addMessage(newMessage);
+      const eventName = `new-message::${cmReq.chat}`;
+      io.emit(eventName, updatedMessage);
+
       if (newCommunity) {
         await deleteCommunityRequest(cmReq._id)
         return res.status(200).json(response({ status: 'Success', statusCode: '200', type: 'community-request', message: req.t('community-request-accepted') }));

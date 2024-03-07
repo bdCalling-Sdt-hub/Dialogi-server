@@ -12,43 +12,66 @@ const addUser = async (userBody) => {
 }
 
 const getUserById = async (id) => {
-  return await User.findById(id);
+  try {
+    return await User.findById(id);
+  }
+  catch (error) {
+    throw error;
+  }
 }
 
 const getUserByEmail = async (email) => {
-  return await User.findOne({ email });
+  try {
+    return await User.findOne({ email });
+  }
+  catch (error) {
+    throw error;
+  }
 }
 
 const getAllUsers = async (filter, options) => {
-  const { page = 1, limit = 10 } = options;
-  const skip = (page - 1) * limit;
-  const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
-  const totalResults = await User.countDocuments(filter);
-  const totalUsers = await User.countDocuments({ role: 'user' });
-  const totalPages = Math.ceil(totalResults / limit);
-  const pagination = { totalResults, totalPages, currentPage: page, limit, totalUsers };
-  return { userList, pagination };
+  try {
+    const { page = 1, limit = 10 } = options;
+    const skip = (page - 1) * limit;
+    const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
+    const totalResults = await User.countDocuments(filter);
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const totalPages = Math.ceil(totalResults / limit);
+    const pagination = { totalResults, totalPages, currentPage: page, limit, totalUsers };
+    return { userList, pagination };
+  }
+  catch (error) {
+    throw error;
+  }
 }
 
 const getSpecificUsers = async (filter, options) => {
-  const { page = 1, limit = 10 } = options;
-  const skip = (page - 1) * limit;
-  const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
-  const totalResults = await User.countDocuments(filter);
-  const totalUsers = await User.countDocuments({ role: 'user' });
-  const totalPages = Math.ceil(totalResults / limit);
-  const pagination = { totalResults, totalPages, currentPage: page, limit, totalUsers };
-  return { userList, pagination };
+  try {
+    const { page = 1, limit = 10 } = options;
+    const skip = (page - 1) * limit;
+    const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
+    const totalResults = await User.countDocuments(filter);
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const totalPages = Math.ceil(totalResults / limit);
+    const pagination = { totalResults, totalPages, currentPage: page, limit, totalUsers };
+    return { userList, pagination };
+  }
+  catch (error) {
+    throw error;
+  }
 }
 
-const login = async (email, password) => {
+const login = async (email, password, purpose) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
       return null;
     }
-    if(user && user.loginInWithProvider===true){
+    if (user && user.loginInWithProvider === true && (purpose === "changePass" || purpose === "deleteAccount")) {
       return user;
+    }
+    if (user && user.loginInWithProvider === true && purpose === "signIn") {
+      return null;
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -77,10 +100,6 @@ const updateUser = async (userId, userbody) => {
   catch (error) {
     throw error;
   }
-}
-
-const loginWithProvide = async (email, provider) => {
-  //under development
 }
 
 module.exports = {

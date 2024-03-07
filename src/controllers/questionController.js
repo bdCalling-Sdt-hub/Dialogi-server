@@ -31,7 +31,6 @@ const allQuestions = async (req, res) => {
       category: req.params.category,
       accessStatus: accessStatus
     };
-    console.log(req.body.userId);
     if(req.body.userId){
       filter.userId = req.body.userId;
     }
@@ -101,7 +100,6 @@ const getQuestionDetails = async (req, res) => {
 const getSubCategory = async (req, res) => {
   try{
     const { page, limit, accessStatus } = req.query;
-    console.log(typeof accessStatus, accessStatus)
     const options = { page, limit };
     const filter = { category: req.params.categoryID, accessStatus};
   

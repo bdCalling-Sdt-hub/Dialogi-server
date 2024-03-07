@@ -20,7 +20,7 @@ const getCommunityRequest = async (filters, options) => {
   try {
     const {page=1, limit=10} = options;
     const skip = (page - 1) * limit;
-    const communityRequestList =  await CommunityRequest.find(filters).select('chat').populate('chat createdAt', 'groupName image').skip(skip).limit(limit);
+    const communityRequestList =  await CommunityRequest.find(filters).select('chat').populate('chat createdAt', 'groupName image').skip(skip).limit(limit).sort({createdAt: -1});
     const totalResults = await CommunityRequest.countDocuments(filters);
     const totalPages = Math.ceil(totalResults / limit);
     const pagination = { totalResults, totalPages, currentPage: page, limit };

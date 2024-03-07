@@ -1,9 +1,10 @@
 require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
-const { getChatByParticipantId, getChatMembersByChatId, getChat, getChatById, leaveGroup, getParticipantStatus } = require('../services/chatService');
+const { getChatByParticipantId, getChatMembersByChatId, getChat, getChatById, leaveGroup, getParticipantStatus, deleteChatById } = require('../services/chatService');
 const { addMessage } = require('../services/messageService');
 const { getUserById } = require('../services/userService');
+const Chat = require('../models/Chat');
 
 const getAllChats = async (req, res) => {
   try {
@@ -80,7 +81,7 @@ const leaveFromGroup = async (req, res) => {
         chat: chatId,
         message: req.body.userFullName + " has left the chat",
         sender: req.body.userId,
-        messageType:"notice"
+        messageType: "notice"
       }
       const updatedMessage = await addMessage(newMessage);
       console.log(updatedMessage);
@@ -125,7 +126,7 @@ const kickMember = async (req, res) => {
         chat: chatId,
         message: "Admin has kicked " + userData.fullName + " from the chat",
         sender: req.body.userId,
-        messageType:"notice"
+        messageType: "notice"
       }
       const updatedMessage = await addMessage(newMessage);
       const eventName = `new-message::${chatId}`;
@@ -156,7 +157,7 @@ const updateGroupName = async (req, res) => {
       chat: chatId,
       message: "Group name has been updated to " + req.body.name,
       sender: req.body.userId,
-      messageType:"notice"
+      messageType: "notice"
     }
     const updatedMessage = await addMessage(newMessage);
     const eventName = `new-message::${chatId}`;
@@ -172,4 +173,33 @@ const updateGroupName = async (req, res) => {
   }
 }
 
-module.exports = { getAllChats, getChatMembers, getCommunities, kickMember, leaveFromGroup, updateGroupName }
+const deleteDeleteConversation = async (req, res) => {
+  try {
+    const chatId = req.params.id;
+    const chat = await getChatById(chatId);
+    if (!chat) {
+      return res.status(404).json(response({ status: 'Not Found', statusCode: '404', message: req.t('not-found') }));
+    }
+    if (chat.type === "single") {
+      const result = await deleteChatById(chat._id)
+      return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('chat-deleted'), data: result }));
+    }
+    if (chat.type === "group" || chat.type === "community") {
+      if (chat.groupAdmin.toString() !== req.body.userId.toString()) {
+        await deleteChatById(chat._id);
+        return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('chat-deleted') }));
+      }
+      else {
+        return res.status(403).json(response({ status: 'Error', statusCode: '403', message: req.t('forbidden') }));
+      }
+    }
+    return res.status(400).json(response({ status: 'Error', statusCode: '400', message: req.t('chat-delete-failed') }));
+  }
+  catch (error) {
+    console.error(error);
+    logger.error(error.message, req.originalUrl);
+    return res.status(500).json(response({ status: 'Error', statusCode: '500', type: 'chat', message: req.t('server-error') }));
+  }
+}
+
+module.exports = { getAllChats, getChatMembers, getCommunities, kickMember, leaveFromGroup, updateGroupName, deleteDeleteConversation }

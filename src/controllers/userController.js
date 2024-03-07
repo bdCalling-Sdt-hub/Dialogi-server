@@ -12,7 +12,7 @@ const { addToken, verifyToken, deleteToken } = require('../services/tokenService
 const emailWithNodemailer = require('../helpers/email');
 const crypto = require('crypto');
 const { getFriendByParticipants, deleteFriendByUserId } = require('../services/frinedService');
-const { deleteChatByUserId } = require('../services/chatService');
+const { deleteChatForDeletedUser } = require('../services/chatService');
 const { deleteDiscussionByUserId } = require('../services/discussionService');
 const { deleteDislikeByUserId } = require('../services/dislikeService')
 const { deleteLikeByUserId } = require('../services/likeService');
@@ -137,7 +137,7 @@ const signIn = async (req, res) => {
     }
     console.log(email, password)
 
-    const user = await login(email, password);
+    const user = await login(email, password, 'signIn');
     if (user && !user?.isBlocked) {
       let activityId = null
     if (user.role === 'admin') {
@@ -539,7 +539,7 @@ const changePassword = async (req, res) => {
     if (!isValidPassword) {
       return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('password-format-error') }));
     }
-    const verifyUser = await login(req.body.userEmail, oldPassword);
+    const verifyUser = await login(req.body.userEmail, oldPassword, 'changePass');
     if (!verifyUser) {
       return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('password-invalid') }));
     }
@@ -641,12 +641,12 @@ const deleteUserByAdmin = async (req, res) => {
 const deleteUserAccount = async (req, res) => {
   try {
     const { password } = req.body;
-    const user = await login(req.body.userEmail, password);
+    const user = await login(req.body.userEmail, password, 'deleteAccount');
     if (!user) {
       return res.status(400).json(response({ statusCode: '400', message: req.t('password-invalid'), status: "Error" }));
     }
     await deleteAccount(user._id);
-    await deleteChatByUserId(user._id);
+    await deleteChatForDeletedUser(user._id);
     await deleteDiscussionByUserId(user._id);
     await deleteDislikeByUserId(user._id);
     await deleteFriendByUserId(user._id);

@@ -80,7 +80,6 @@ const getAllQuestions = async (filter, options) => {
   const discussionPage = Number(options.discussionPage) || 1;
   const discussionLimit = Number(options.discussionLimit) || 3;
   const discussionSkip = (discussionPage - 1) * discussionLimit;
-
   const category = new mongoose.Types.ObjectId(filter.category);
   const userId = new mongoose.Types.ObjectId(filter.userId);
   const subCategory = filter.subCategory;
@@ -88,7 +87,6 @@ const getAllQuestions = async (filter, options) => {
     category: category,
     subCategory: subCategory
   }
-  var accessStatus = false;
   if(filter.accessStatus!==undefined){
     accessStatus = filter.accessStatus==='true'?true:false;
     matchData.isEarlyAccessAvailable = accessStatus;
@@ -240,7 +238,6 @@ const getAllQuestions = async (filter, options) => {
 
   // Calculate pagination for questions
   const totalResults = await Question.countDocuments(matchData);
-  console.log(filter)
   const totalPages = Math.ceil(totalResults / questionlimit);
   const pagination = { totalResults, totalPages, currentPage: page, limit: questionlimit };
 
