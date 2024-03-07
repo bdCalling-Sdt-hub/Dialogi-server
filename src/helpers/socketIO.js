@@ -223,26 +223,27 @@ const socketIO = (io) => {
               chat: chat._id,
               message: question.question,
               sender: data.groupAdmin,
-              messageType: "notice"
+              messageType: "question"
             }
             const updatedMessage = await addMessage(newMessage);
             const eventName = `new-message::${chat._id.toString()}`;
             io.emit(eventName, updatedMessage);
           }
           data.participants.forEach(async (participant) => {
-            const userNotification = {
-              message: "You have been added in " + data?.groupName + " -group",
-              receiver: participant,
-              linkId: chat._id,
-              type: 'group-request',
-              role: 'user',
+            if(participant.toString() !== data.groupAdmin.toString()){
+              const userNotification = {
+                message: "You have been added in " + data?.groupName + " -group",
+                receiver: participant,
+                linkId: chat._id,
+                type: 'group-request',
+                role: 'user',
+              }
+              const userNewNotification = await addNotification(userNotification);
+              const roomId = 'user-notification::' + participant.toString();
+              io.emit(roomId, userNewNotification)
             }
-            const userNewNotification = await addNotification(userNotification);
-            const roomId = 'user-notification::' + participant.toString();
-            io.emit(roomId, userNewNotification)
-
-            const roomID = 'chat-notification::' + participant.toString();
-            io.emit(roomID, { status: "Success", message: "New chat created", data: null });
+            // const roomID = 'chat-notification::' + participant.toString();
+            // io.emit(roomID, { status: "Success", message: "New chat created", data: null });
           });
           return;
         } else {

@@ -86,6 +86,7 @@ const getChatByParticipantId = async (filters, options) => {
     const page = Number(options.page) || 1;
     const limit = Number(options.limit) || 10;
     const skip = (page - 1) * limit;
+    var type;
 
     const participantId = new mongoose.Types.ObjectId(filters.participantId);
     if(filters.type === 'community'){
