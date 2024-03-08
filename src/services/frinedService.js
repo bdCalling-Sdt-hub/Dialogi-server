@@ -28,7 +28,6 @@ const getFriendByParticipantId = async (filters, options) => {
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
-  console.log(filters);
   // Aggregation pipeline to get friends where the user is not req.body.userId
   const friendList = await Friend.find({
     participants: { $in: [filters.participantId] },

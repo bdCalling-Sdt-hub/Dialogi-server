@@ -12,7 +12,6 @@ const addCommunityRequest = async (req, res) => {
   try {
     var { participants, category, groupName, question } = req.body;
     participants = JSON.parse(participants);
-    console.log(req.body, participants);
     if (req.body.userRole !== "user" && req.body.userSubscription !== "premium-plus") {
       return res.status(403).json(response({ status: 'Error', statusCode: '403', message: req.t('unauthorized') }));
     }
@@ -163,7 +162,6 @@ const CommunityRequestDecision = async (req, res) => {
     if (!cmReq) {
       return res.status(404).json(response({ status: 'Not Found', statusCode: '404', data: null }));
     }
-    console.log(req.body.status);
     if (req.body.status === "accepted") {
       const newCommunity = await addToCommunity(cmReq.chat, req.body.userId);
       const newMessage = {

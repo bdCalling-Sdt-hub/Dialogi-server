@@ -3,6 +3,7 @@ const response = require("../helpers/response");
 const logger = require("../helpers/logger");
 const { addCategory, getAllCategorys, updateCategory, getCategoryByName, getCategoryById, deleteCategory, getCategoryWithAccessStatus } = require('../services/categoryService');
 const { getMySubscriptionByUserId } = require('../services/mySubscriptionService');
+const unlinkImage = require('../common/image/unlinkImage');
 
 const addNewCategory = async (req, res) => {
   try{
@@ -79,6 +80,7 @@ const updateCategoryById = async (req, res) => {
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'category', message: req.t('category-not-found') }));
     }
     if (req.file) {
+      unlinkImage(category.image);
       req.body.image = `/uploads/categories/${req.file.filename}`
     }
     const updatedCategory = await updateCategory(req.params.id, req.body);

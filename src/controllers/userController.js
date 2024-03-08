@@ -63,7 +63,6 @@ const signUp = async (req, res) => {
     if (!otp) {
       const existingOTP = await checkOTPByEmail(email);
       if (existingOTP) {
-        console.log('OTP already exists', existingOTP);
         if (req.file) {
           unlinkImage(req.file.path)
         }
@@ -135,7 +134,6 @@ const signIn = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json(response({ statusCode: '200', message: req.t('login-credentials-required'), status: "OK" }));
     }
-    console.log(email, password)
 
     const user = await login(email, password, 'signIn');
     if (user && !user?.isBlocked) {
@@ -182,7 +180,6 @@ const signIn = async (req, res) => {
         browser,
         userId: user._id
       });
-      console.log(activity)
       activityId = activity._id
     }
 
@@ -555,8 +552,6 @@ const changePassword = async (req, res) => {
 }
 
 const updateProfile = async (req, res) => {
-  console.log(req.body)
-  console.log(req.file)
   try {
     const { fullName, dateOfBirth, address } = req.body;
     const user = await getUserById(req.body.userId);

@@ -84,7 +84,6 @@ const leaveFromGroup = async (req, res) => {
         messageType: "notice"
       }
       const updatedMessage = await addMessage(newMessage);
-      console.log(updatedMessage);
       const eventName = `new-message::${chatId}`;
 
       //sending the leave message to group
@@ -185,7 +184,7 @@ const deleteDeleteConversation = async (req, res) => {
       return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('chat-deleted'), data: result }));
     }
     if (chat.type === "group" || chat.type === "community") {
-      if (chat.groupAdmin.toString() !== req.body.userId.toString()) {
+      if (chat.groupAdmin.toString() === req.body.userId.toString()) {
         await deleteChatById(chat._id);
         return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('chat-deleted') }));
       }

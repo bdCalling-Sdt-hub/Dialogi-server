@@ -1,12 +1,23 @@
 const fs = require("fs");
 const path = require("path");
 
-function unlinkImage(imagePath) {
-  if (!/^\/?public\//.test(imagePath)) {
-    // If not, prepend "public/" to the path
-    imagePath = path.join("public/", imagePath);
-}
+function unlinkImage(imgPath) {
+  var imagePath;
+  // if (!/^\?public\//.test(imagePath)) {
+  //   // If not, prepend "public/" to the path
+  //   imagePath = path.join("public/", imagePath);
+  // }
+  if(imgPath.startsWith('public')){
+    imagePath = imgPath;
+  }
+  else if(imgPath.startsWith('\\public')){
+    imagePath = imgPath.slice(1);
+  }
+  else{
+    imagePath = path.join("public/", imgPath);
+  }
 
+  console.log("imagePath ---> ", imgPath, imagePath);
   const fileExists = fs.existsSync(imagePath);
   if (!fileExists) {
     console.log(`File ${imagePath} does not exist`);

@@ -230,7 +230,7 @@ const socketIO = (io) => {
             io.emit(eventName, updatedMessage);
           }
           data.participants.forEach(async (participant) => {
-            if(participant.toString() !== data.groupAdmin.toString()){
+            if(participant.toString() !== data.groupAdmin){
               const userNotification = {
                 message: "You have been added in " + data?.groupName + " -group",
                 receiver: participant,
@@ -277,7 +277,6 @@ const socketIO = (io) => {
         if (chat && chat.type === "single") {
           const eventName1 = 'update-chatlist::' + chat.participants[0].toString();
           const eventName2 = 'update-chatlist::' + chat.participants[1].toString();
-          console.log(eventName1, eventName2);
           const chatListforUser1 = await getChatByParticipantId({ participantId: chat.participants[0] }, { page: 1, limit: 10 });
           const chatListforUser2 = await getChatByParticipantId({ participantId: chat.participants[1] }, { page: 1, limit: 10 });
           io.emit(eventName1, chatListforUser1);
