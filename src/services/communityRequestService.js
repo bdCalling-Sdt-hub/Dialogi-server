@@ -1,8 +1,10 @@
 const CommunityRequest = require('../models/CommunityRequest');
 
-const addMultipleCommunityRequest = async (data) => {
+const addNewCommunityRequest = async (communityRequestBody) => {
   try {
-    return await CommunityRequest.insertMany(data, { ordered: false });
+    const communityRequest = new CommunityRequest(communityRequestBody);
+    await communityRequest.save();
+    return communityRequest;
   } catch (error) {
     throw error;
   }
@@ -20,7 +22,7 @@ const getCommunityRequest = async (filters, options) => {
   try {
     const {page=1, limit=10} = options;
     const skip = (page - 1) * limit;
-    const communityRequestList =  await CommunityRequest.find(filters).select('chat').populate('chat createdAt', 'groupName image').skip(skip).limit(limit);
+    const communityRequestList =  await CommunityRequest.find(filters).select('chat').populate('chat createdAt', 'groupName image').skip(skip).limit(limit).sort({createdAt: -1});
     const totalResults = await CommunityRequest.countDocuments(filters);
     const totalPages = Math.ceil(totalResults / limit);
     const pagination = { totalResults, totalPages, currentPage: page, limit };
@@ -39,9 +41,18 @@ const getCommunityRequestById = async (id)=>{
   }
 }
 
+const deleteCommunityRequestByUser = async (userId) => {
+  try {
+    return await CommunityRequest.deleteMany({ sender: userId });
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
-  addMultipleCommunityRequest,
+  addNewCommunityRequest,
   deleteCommunityRequest,
   getCommunityRequest,
-  getCommunityRequestById
+  getCommunityRequestById,
+  deleteCommunityRequestByUser
 }

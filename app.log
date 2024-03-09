@@ -1,6 +1,0 @@
-2024-03-05T12:03:08.142Z [ERROR] Notification validation failed: type: `friend-request-accepted` is not a valid enum value for path `type`. (Error Path: /api/friends/65e709f66de8f9f5b0bcc016)
-2024-03-05T11:58:55.925Z [ERROR] Cannot read properties of undefined (reading '0') (Error Path: /api/friends/65e708f9cd0187b07694714f)
-2024-03-05T11:57:58.804Z [ERROR] Cannot read properties of undefined (reading '0') (Error Path: /api/friends/65e708304f6bdeb19f5b8dd4)
-2024-03-05T10:36:23.797Z [ERROR] Message validation failed: sender: Path `sender` is required. (Error Path: /api/chats/community-chat)
-2024-03-05T10:36:03.262Z [ERROR] chat is not defined (Error Path: /api/chats/community-chat)
-2024-03-05T10:35:43.303Z [ERROR] getQuestionById is not defined (Error Path: /api/chats/community-chat)

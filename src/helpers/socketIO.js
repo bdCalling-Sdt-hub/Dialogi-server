@@ -223,26 +223,27 @@ const socketIO = (io) => {
               chat: chat._id,
               message: question.question,
               sender: data.groupAdmin,
-              messageType: "notice"
+              messageType: "question"
             }
             const updatedMessage = await addMessage(newMessage);
             const eventName = `new-message::${chat._id.toString()}`;
             io.emit(eventName, updatedMessage);
           }
           data.participants.forEach(async (participant) => {
-            const userNotification = {
-              message: "You have been added in " + data?.groupName + " -group",
-              receiver: participant,
-              linkId: chat._id,
-              type: 'group-request',
-              role: 'user',
+            if(participant.toString() !== data.groupAdmin){
+              const userNotification = {
+                message: "You have been added in " + data?.groupName + " -group",
+                receiver: participant,
+                linkId: chat._id,
+                type: 'group-request',
+                role: 'user',
+              }
+              const userNewNotification = await addNotification(userNotification);
+              const roomId = 'user-notification::' + participant.toString();
+              io.emit(roomId, userNewNotification)
             }
-            const userNewNotification = await addNotification(userNotification);
-            const roomId = 'user-notification::' + participant.toString();
-            io.emit(roomId, userNewNotification)
-
-            const roomID = 'chat-notification::' + participant.toString();
-            io.emit(roomID, { status: "Success", message: "New chat created", data: null });
+            // const roomID = 'chat-notification::' + participant.toString();
+            // io.emit(roomID, { status: "Success", message: "New chat created", data: null });
           });
           return;
         } else {
@@ -276,7 +277,6 @@ const socketIO = (io) => {
         if (chat && chat.type === "single") {
           const eventName1 = 'update-chatlist::' + chat.participants[0].toString();
           const eventName2 = 'update-chatlist::' + chat.participants[1].toString();
-          console.log(eventName1, eventName2);
           const chatListforUser1 = await getChatByParticipantId({ participantId: chat.participants[0] }, { page: 1, limit: 10 });
           const chatListforUser2 = await getChatByParticipantId({ participantId: chat.participants[1] }, { page: 1, limit: 10 });
           io.emit(eventName1, chatListforUser1);

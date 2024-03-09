@@ -31,7 +31,6 @@ const allQuestions = async (req, res) => {
       category: req.params.category,
       accessStatus: accessStatus
     };
-    console.log(req.body.userId);
     if(req.body.userId){
       filter.userId = req.body.userId;
     }
@@ -48,6 +47,9 @@ const allQuestions = async (req, res) => {
 const updateQuestionById = async (req, res) => {
   try{
     const question = await getQuestionById(req.params.id);
+    if(req.body.userRole!=='admin'){
+      return res.status(401).json(response({ status: 'Error', statusCode: '400', type: 'question', message: req.t('unauthorised') }));
+    }
     if(!question){
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'question', message: req.t('question-not-found') }));
     }
@@ -63,6 +65,9 @@ const updateQuestionById = async (req, res) => {
 
 const deleteQuestionById = async (req, res) => {
   try{
+    if(req.body.userRole!=='admin'){
+      return res.status(401).json(response({ status: 'Error', statusCode: '400', type: 'question', message: req.t('unauthorised') }));
+    }
     const question = await getQuestionById(req.params.id);
     if(!question){
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'question', message: req.t('question-not-found') }));
@@ -95,7 +100,6 @@ const getQuestionDetails = async (req, res) => {
 const getSubCategory = async (req, res) => {
   try{
     const { page, limit, accessStatus } = req.query;
-    console.log(typeof accessStatus, accessStatus)
     const options = { page, limit };
     const filter = { category: req.params.categoryID, accessStatus};
   

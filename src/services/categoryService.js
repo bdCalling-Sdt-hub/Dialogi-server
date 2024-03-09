@@ -121,7 +121,6 @@ const getCategoryWithAccessStatus = async (filter, options) => {
       }
     ]);
     const count = totalResultsEr[0]?.count !== undefined ? totalResultsEr[0].count : 0;
-    console.log(count, totalResultsEr[0]?.count);
     const totalPagesEr = Math.ceil(count / limitEr);
     paginationEr = { totalResults: count, totalPages: totalPagesEr, currentPage: pageEr, limit: limitEr };
   }

@@ -15,7 +15,8 @@ const getFriendByParticipants = async (participants) => {
   const ndata = await Friend.findOne({
     participants: {
       $all: participants
-    }
+    },
+    status: 'accepted'
   });
   return ndata;
 }
@@ -28,7 +29,6 @@ const getFriendByParticipantId = async (filters, options) => {
   const page = Number(options.page) || 1;
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
-  console.log(filters);
   // Aggregation pipeline to get friends where the user is not req.body.userId
   const friendList = await Friend.find({
     participants: { $in: [filters.participantId] },
@@ -172,10 +172,6 @@ const getGroupCreateFriendByParticipantId = async (filters, options) => {
     throw error;
   }
 };
-
-
-
-
 
 const deleteFriendByUserId = async (userId) => {
   return await Friend.deleteMany({ participants: { $in: [userId] } });

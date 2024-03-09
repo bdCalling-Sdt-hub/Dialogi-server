@@ -1,3 +1,4 @@
+const unlinkImage = require('../common/image/unlinkImage');
 const logger = require('../helpers/logger');
 const response = require('../helpers/response')
 function notFoundHandler(req, res, next){
@@ -9,6 +10,9 @@ function notFoundHandler(req, res, next){
 function errorHandler(err, req, res, next){
   console.error('Error Handler--------->', err);
   logger.error(err,req.originalUrl);
+  if(req.file){
+    unlinkImage(req.file.path)
+  }
   return res.status(500).json(response({ status: 'Error', statusCode: '500', type: err.name, message: err.message, data: null }));
 }
 module.exports = {notFoundHandler, errorHandler}

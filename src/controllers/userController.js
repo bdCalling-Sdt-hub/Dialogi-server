@@ -12,7 +12,7 @@ const { addToken, verifyToken, deleteToken } = require('../services/tokenService
 const emailWithNodemailer = require('../helpers/email');
 const crypto = require('crypto');
 const { getFriendByParticipants, deleteFriendByUserId } = require('../services/frinedService');
-const { deleteChatByUserId } = require('../services/chatService');
+const { deleteChatForDeletedUser } = require('../services/chatService');
 const { deleteDiscussionByUserId } = require('../services/discussionService');
 const { deleteDislikeByUserId } = require('../services/dislikeService')
 const { deleteLikeByUserId } = require('../services/likeService');
@@ -23,6 +23,7 @@ const Category = require('../models/Category');
 const Payment = require('../models/Payment');
 const NodeCache = require('node-cache');
 const Activity = require('../models/Activity');
+const { deleteCommunityRequestByUser } = require('../services/communityRequestService');
 const cache = new NodeCache();
 
 const generateWeekList = (last7DaysStart) => {
@@ -63,7 +64,6 @@ const signUp = async (req, res) => {
     if (!otp) {
       const existingOTP = await checkOTPByEmail(email);
       if (existingOTP) {
-        console.log('OTP already exists', existingOTP);
         if (req.file) {
           unlinkImage(req.file.path)
         }
@@ -136,7 +136,7 @@ const signIn = async (req, res) => {
       return res.status(400).json(response({ statusCode: '200', message: req.t('login-credentials-required'), status: "OK" }));
     }
 
-    const user = await login(email, password);
+    const user = await login(email, password, 'signIn');
     if (user && !user?.isBlocked) {
       let activityId = null
     if (user.role === 'admin') {
@@ -181,7 +181,6 @@ const signIn = async (req, res) => {
         browser,
         userId: user._id
       });
-      console.log(activity)
       activityId = activity._id
     }
 
@@ -190,15 +189,11 @@ const signIn = async (req, res) => {
       const refreshToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
       return res.status(200).json(response({ statusCode: '200', message: req.t('login-success'), status: "OK", type: "user", data: user, accessToken: token, refreshToken: refreshToken }));
     }
-    if (user && user?.isBlocked) {
-      return res.status(401).json(response({ statusCode: '200', message: req.t('blocked-user'), status: "OK" }));
-    }
-    return res.status(401).json(response({ statusCode: '200', message: req.t('login-failed'), status: "OK" }));
-
+    return res.status(404).json(response({ statusCode: '400', message: req.t('login-failed'), status: "OK" }));
   } catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t(error), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 };
 
@@ -213,7 +208,7 @@ const signInWithRefreshToken = async (req, res) => {
   } catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 };
 
@@ -225,7 +220,8 @@ const signInWithProvider = async (req, res) => {
         fullName: req.body.fullName,
         email: req.body.email,
         role: 'user',
-        subscription: 'default'
+        subscription: 'default',
+        loginInWithProvider: true
       }
       user = await addUser(user);
     }
@@ -235,7 +231,7 @@ const signInWithProvider = async (req, res) => {
   } catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 };
 
@@ -255,7 +251,7 @@ const forgetPassword = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
 
@@ -282,7 +278,7 @@ const verifyForgetPasswordOTP = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
 
@@ -317,7 +313,7 @@ const resetPassword = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
 
@@ -376,7 +372,7 @@ const addWorker = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
 
@@ -415,7 +411,7 @@ const getUsers = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
 
@@ -446,7 +442,7 @@ const getWorkers = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
+    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
 
@@ -473,46 +469,16 @@ const getProfileDetails = async (req, res) => {
     if (frinedStatus) {
       friendRequestStatus = frinedStatus.status;
     }
-    return res.status(200).json(response({ statusCode: '2000', message: req.t('user-details'), data: { userDetails, friendRequestStatus }, status: "OK" }));
+    if(userDetails.isDeleted === true){
+      return res.status(410).json(response({ statusCode: '410', message: req.t('account-deleted'), status: "Account Deleted" }));
+    }
+    return res.status(200).json(response({ statusCode: '200', message: req.t('user-details'), data: { userDetails, friendRequestStatus }, status: "OK" }));
   }
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
     return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
-}
-
-const addPasscode = async (req, res) => {
-  try {
-    var token
-    if (req.headers['pass-code'] && req.headers['pass-code'].startsWith('Pass-code ')) {
-      token = req.headers['pass-code'].split(' ')[1];
-    }
-    const tokenData = await verifyToken(token, 'passcode-verification');
-    if (!tokenData) {
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('invalid-token') }));
-    }
-    const clientId = req.body.clientId;
-    const passcode = req.body.passcode;
-    const userData = await getUserById(clientId);
-    if (!userData) {
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
-    }
-    if (userData.role !== 'user') {
-      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('unauthorised') }));
-    }
-    userData.passcode = passcode;
-    await userData.save();
-    const accessToken = jwt.sign({userFullName: tokenData.fullName, _id: tokenData.userId._id, email: tokenData.userId.email, role: tokenData.userId.role }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
-    const refreshToken = jwt.sign({userFullName: tokenData.fullName, _id: userData._id, email: userData.email, role: userData.role }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-added'), data: userData, accessToken: accessToken, refreshToken: refreshToken }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
-  }
-
 }
 
 const blockUser = async (req, res) => {
@@ -574,7 +540,7 @@ const changePassword = async (req, res) => {
     if (!isValidPassword) {
       return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('password-format-error') }));
     }
-    const verifyUser = await login(req.body.userEmail, oldPassword);
+    const verifyUser = await login(req.body.userEmail, oldPassword, 'changePass');
     if (!verifyUser) {
       return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('password-invalid') }));
     }
@@ -589,30 +555,7 @@ const changePassword = async (req, res) => {
   }
 }
 
-const signInWithPasscode = async (req, res) => {
-  try {
-    const { email, passcode } = req.body;
-    if (!email || !passcode) {
-      return res.status(400).json(response({ statusCode: '200', message: req.t('login-credentials-required'), status: "OK" }));
-    }
-
-    const user = await loginWithPasscode(email, passcode);
-    if (!user || (user && user.role !== 'user') || (user && user.isBlocked)) {
-      return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised'), status: "Error" }));
-    }
-    const accessToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
-  }
-}
-
 const updateProfile = async (req, res) => {
-  console.log(req.body)
-  console.log(req.file)
   try {
     const { fullName, dateOfBirth, address } = req.body;
     const user = await getUserById(req.body.userId);
@@ -669,62 +612,6 @@ const getBlockedUsers = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '200', message: req.t('server-error'), status: "Error" }));
-  }
-}
-
-const verifyOldPasscode = async (req, res) => {
-  try {
-    const { passcode } = req.body;
-    const user = await getUserById(req.body.userId);
-    if (req.body.userRole !== 'user') {
-      return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('unauthorised') }));
-    }
-    const verifyUser = await loginWithPasscode(req.body.userEmail, passcode);
-    var passcodeToken;
-    if (verifyUser) {
-      passcodeToken = crypto.randomBytes(32).toString('hex');
-      const data = {
-        token: passcodeToken,
-        userId: user._id,
-        purpose: 'passcode-verification',
-      }
-      await addToken(data);
-      return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-verified'), passcodeToken: passcodeToken }));
-    }
-    return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('invalid-passcode') }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
-    return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
-  }
-}
-
-const changePasscode = async (req, res) => {
-  try {
-    var forgetPasswordToken
-    if (req.headers['pass-code'] && req.headers['pass-code'].startsWith('Pass-code ')) {
-      forgetPasswordToken = req.headers['pass-code'].split(' ')[1];
-    }
-    if (!forgetPasswordToken) {
-      return res.status(401).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('unauthorised') }));
-    }
-
-    const tokenData = await verifyToken(forgetPasswordToken, 'passcode-verification');
-    const { newPasscode } = req.body;
-    if (!tokenData) {
-      return res.status(400).json(response({ status: 'Error', statusCode: '400', type: 'user', message: req.t('unauthorised') }));
-    }
-    const user = await getUserById(req.body.userId);
-    user.passcode = newPasscode;
-    await user.save();
-    deleteToken(tokenData._id);
-    return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('passcode-changed'), data: user }));
-  }
-  catch (error) {
-    console.error(error);
-    logger.error(error, req.originalUrl)
     return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
   }
 }
@@ -753,18 +640,22 @@ const deleteUserByAdmin = async (req, res) => {
 const deleteUserAccount = async (req, res) => {
   try {
     const { password } = req.body;
-    const user = await login(req.body.userEmail, password);
+    const user = await login(req.body.userEmail, password, 'deleteAccount');
     if (!user) {
       return res.status(400).json(response({ statusCode: '400', message: req.t('password-invalid'), status: "Error" }));
     }
     await deleteAccount(user._id);
-    await deleteChatByUserId(user._id);
-    await deleteDiscussionByUserId(user._id);
-    await deleteDislikeByUserId(user._id);
-    await deleteFriendByUserId(user._id);
-    await deleteLikeByUserId(user._id);
-    await deleteMessageByUserId(user._id);
-    await deletePaymentInfoByUserId(user._id);
+    const chatData = await deleteChatForDeletedUser(user._id);
+    const frinedData = await deleteFriendByUserId(user._id);
+    const messageData =  deleteMessageByUserId(user._id);
+    const paymentData = await deletePaymentInfoByUserId(user._id);
+    const comReq = await deleteCommunityRequestByUser(user._id);
+    
+    //await deleteDiscussionByUserId(user._id);
+    //await deleteDislikeByUserId(user._id);
+    //await deleteLikeByUserId(user._id);
+
+    console.log(chatData, frinedData, paymentData, messageData, comReq)
 
     return res.status(200).json(response({ statusCode: '200', message: req.t('user-deleted'), status: "OK" }));
   }
@@ -853,10 +744,12 @@ const getPremiumPlusUsers = async (req, res) => {
     const filter = {
       role: 'user',
       subscription: 'premium-plus',
-      _id: { $ne: req.body.userId }
+      _id: { $ne: req.body.userId },
+      isBlocked: false
     };
     const options = { page, limit };
     const { userList, pagination } = await getAllUsers(filter, options);
+    console.log(userList)
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-list'), data: { userList, pagination } }));
   }
   catch (error) {
@@ -866,4 +759,4 @@ const getPremiumPlusUsers = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, addPasscode, blockUser, unBlockUser, changePassword, signInWithPasscode, signInWithRefreshToken, updateProfile, getBlockedUsers, changePasscode, verifyOldPasscode, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts, getPremiumPlusUsers }
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, blockUser, unBlockUser, changePassword, signInWithRefreshToken, updateProfile, getBlockedUsers, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts, getPremiumPlusUsers }

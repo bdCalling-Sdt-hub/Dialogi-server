@@ -12,67 +12,106 @@ const addUser = async (userBody) => {
 }
 
 const getUserById = async (id) => {
-  return await User.findById(id);
+  try {
+    return await User.findById(id);
+  }
+  catch (error) {
+    throw error;
+  }
 }
 
 const getUserByEmail = async (email) => {
-  return await User.findOne({ email });
+  try {
+    return await User.findOne({ email });
+  }
+  catch (error) {
+    throw error;
+  }
 }
 
 const getAllUsers = async (filter, options) => {
-  const {page=1, limit=10} = options;
-  const skip = (page - 1) * limit;
-  const userList = await User.find(filter).skip(skip).limit(limit).sort({createdAt: -1});
-  const totalResults = await User.countDocuments(filter);
-  const totalUsers = await User.countDocuments({role:'user'});
-  const totalPages = Math.ceil(totalResults / limit);
-  const pagination = {totalResults, totalPages, currentPage: page, limit, totalUsers};
-  return {userList, pagination};
+  try {
+    const { page = 1, limit = 10 } = options;
+    const skip = (page - 1) * limit;
+    const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
+    const totalResults = await User.countDocuments(filter);
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const totalPages = Math.ceil(totalResults / limit);
+    const pagination = { totalResults, totalPages, currentPage: page, limit, totalUsers };
+    return { userList, pagination };
+  }
+  catch (error) {
+    throw error;
+  }
 }
 
 const getSpecificUsers = async (filter, options) => {
-  const {page=1, limit=10} = options;
-  const skip = (page - 1) * limit;
-  const userList = await User.find(filter).skip(skip).limit(limit).sort({createdAt: -1});
-  const totalResults = await User.countDocuments(filter);
-  const totalUsers = await User.countDocuments({role:'user'});
-  const totalPages = Math.ceil(totalResults / limit);
-  const pagination = {totalResults, totalPages, currentPage: page, limit, totalUsers};
-  return {userList, pagination};
+  try {
+    const { page = 1, limit = 10 } = options;
+    const skip = (page - 1) * limit;
+    const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
+    const totalResults = await User.countDocuments(filter);
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const totalPages = Math.ceil(totalResults / limit);
+    const pagination = { totalResults, totalPages, currentPage: page, limit, totalUsers };
+    return { userList, pagination };
+  }
+  catch (error) {
+    throw error;
+  }
 }
 
-const login = async (email, password) => {
-  const user = await User.findOne({ email });
-  if (!user) {
-    return null;
+const login = async (email, password, purpose) => {
+  try {
+
+    console.log(email, password, purpose);
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return null;
+    }
+    if (user && user.loginInWithProvider === true && (purpose === "changePass" || purpose === "deleteAccount")) {
+      return user;
+    }
+    if (user && user.loginInWithProvider === true && purpose === "signIn") {
+      return null;
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return null;
+    }
+    return user;
   }
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return null;
+  catch (error) {
+    throw error;
   }
-  return user;
 }
 
 const deleteAccount = async (userId) => {
-  try{
-    return await User.findByIdAndDelete(userId);
+  try {
+    const userData = await User.findById(userId);
+    if(userData){
+      userData.email = userData._id+userData.fullName;
+      userData.fullName = "Dialogi User"
+      userData.image = `/uploads/users/deletedAccount.png`
+      userData.isDeleted = true;
+      userData.save();
+    }
+    console.log(userData);
+    return
   }
-  catch(error){
+  catch (error) {
     throw error;
   }
 }
 
-const updateUser = async (userId,userbody) => {
-  try{
+const updateUser = async (userId, userbody) => {
+  try {
     return await User.findByIdAndUpdate(userId, userbody, { new: true });
   }
-  catch(error){
+  catch (error) {
     throw error;
   }
-}
-
-const loginWithProvide = async (email, provider) => {
-  //under development
 }
 
 module.exports = {

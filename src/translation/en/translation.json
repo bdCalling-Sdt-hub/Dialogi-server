@@ -119,6 +119,11 @@
   "passcode-changed": "Passcode changed successfully",
   "user-deleted": "User deleted successfully",
   "dashboard-counts": "Dashboard counts retrieved successfully",
-  "passcode-verfied": "Passcode verified successfully"
+  "passcode-verfied": "Passcode verified successfully",
+  "forbidden": "You are not allowed to perform this action",
+  "chat-delete-failed": "Chat delete failed, please try again later",
+  "community-request": "Community request retrieved successfully",
+  "chat-deleted": "Chat deleted successfully",
+  "account-deleted": "Account is not available"
 }
 
