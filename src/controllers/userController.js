@@ -23,6 +23,7 @@ const Category = require('../models/Category');
 const Payment = require('../models/Payment');
 const NodeCache = require('node-cache');
 const Activity = require('../models/Activity');
+const { deleteCommunityRequestByUser } = require('../services/communityRequestService');
 const cache = new NodeCache();
 
 const generateWeekList = (last7DaysStart) => {
@@ -468,7 +469,10 @@ const getProfileDetails = async (req, res) => {
     if (frinedStatus) {
       friendRequestStatus = frinedStatus.status;
     }
-    return res.status(200).json(response({ statusCode: '2000', message: req.t('user-details'), data: { userDetails, friendRequestStatus }, status: "OK" }));
+    if(userDetails.isDeleted === true){
+      return res.status(410).json(response({ statusCode: '410', message: req.t('account-deleted'), status: "Account Deleted" }));
+    }
+    return res.status(200).json(response({ statusCode: '200', message: req.t('user-details'), data: { userDetails, friendRequestStatus }, status: "OK" }));
   }
   catch (error) {
     console.error(error);
@@ -641,13 +645,17 @@ const deleteUserAccount = async (req, res) => {
       return res.status(400).json(response({ statusCode: '400', message: req.t('password-invalid'), status: "Error" }));
     }
     await deleteAccount(user._id);
-    await deleteChatForDeletedUser(user._id);
-    await deleteDiscussionByUserId(user._id);
-    await deleteDislikeByUserId(user._id);
-    await deleteFriendByUserId(user._id);
-    await deleteLikeByUserId(user._id);
-    await deleteMessageByUserId(user._id);
-    await deletePaymentInfoByUserId(user._id);
+    const chatData = await deleteChatForDeletedUser(user._id);
+    const frinedData = await deleteFriendByUserId(user._id);
+    const messageData =  deleteMessageByUserId(user._id);
+    const paymentData = await deletePaymentInfoByUserId(user._id);
+    const comReq = await deleteCommunityRequestByUser(user._id);
+    
+    //await deleteDiscussionByUserId(user._id);
+    //await deleteDislikeByUserId(user._id);
+    //await deleteLikeByUserId(user._id);
+
+    console.log(chatData, frinedData, paymentData, messageData, comReq)
 
     return res.status(200).json(response({ statusCode: '200', message: req.t('user-deleted'), status: "OK" }));
   }
@@ -736,10 +744,12 @@ const getPremiumPlusUsers = async (req, res) => {
     const filter = {
       role: 'user',
       subscription: 'premium-plus',
-      _id: { $ne: req.body.userId }
+      _id: { $ne: req.body.userId },
+      isBlocked: false
     };
     const options = { page, limit };
     const { userList, pagination } = await getAllUsers(filter, options);
+    console.log(userList)
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('user-list'), data: { userList, pagination } }));
   }
   catch (error) {

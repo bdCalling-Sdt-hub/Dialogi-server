@@ -1,7 +1,7 @@
 require('dotenv').config();
 const response = require("../helpers/response");
 const logger = require("../helpers/logger");
-const { addMultipleCommunityRequest, deleteCommunityRequest, getCommunityRequest, getCommunityRequestById } = require('../services/communityRequestService');
+const { addNewCommunityRequest, deleteCommunityRequest, getCommunityRequest, getCommunityRequestById } = require('../services/communityRequestService');
 const { addChat, getChatByParticipants, addToCommunity, getChatById, getParticipantStatus, getCommunityStatusByUserId } = require('../services/chatService');
 const { getUserById } = require('../services/userService');
 const { addMessage } = require('../services/messageService');
@@ -30,13 +30,6 @@ const addCommunityRequest = async (req, res) => {
     if (!newGroup) {
       newGroup = await addChat(chatData);
     }
-    const data = participants.map(participant => {
-      return {
-        chat: newGroup._id,
-        user: participant,
-        sendTo: 'user'
-      }
-    });
 
     const questionDetails = await getQuestionById(question);
 
@@ -50,10 +43,15 @@ const addCommunityRequest = async (req, res) => {
     const eventName = `new-message::${newGroup._id.toString()}`;
     io.emit(eventName, updatedMessage);
 
-    await addMultipleCommunityRequest(data);
-
     participants.forEach(async participant => {
       if (req.body.userId.toString() !== participant) {
+        const communityRequest = {
+          chat: newGroup._id,
+          user: participant,
+          sendTo: 'user',
+          sender: req.body.userId,
+        }
+        await addNewCommunityRequest(communityRequest);
         const notification = {
           message: `You have a new community request from ${groupName}`,
           receiver: participant,

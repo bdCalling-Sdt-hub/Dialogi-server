@@ -219,10 +219,10 @@ const deleteChatById = async (chatId) => {
 
 const deleteChatForDeletedUser = async (userId) => {
   try {
-    await Chat.deleteMany({ groupAdmin: userId, type: { $in: ["group", "community"] } });
-    await Chat.updateMany({ participants: { $in: [userId] } }, { $pull: { participants: userId } });
-    await CommunityRequest.deleteMany({ user: userId });
-    return;
+    const chatDelete = await Chat.deleteMany({ groupAdmin: userId, type: { $in: ["group", "community"] } });
+    const chatUpdate = await Chat.updateMany({ participants: { $in: [userId] } }, { $pull: { participants: userId } });
+    const communityDelete = await CommunityRequest.deleteMany({ user: userId });
+    return { chatDelete, chatUpdate, communityDelete };
   }
   catch (error) {
     throw error;

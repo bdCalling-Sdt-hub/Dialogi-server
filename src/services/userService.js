@@ -63,6 +63,9 @@ const getSpecificUsers = async (filter, options) => {
 
 const login = async (email, password, purpose) => {
   try {
+
+    console.log(email, password, purpose);
+
     const user = await User.findOne({ email });
     if (!user) {
       return null;
@@ -86,7 +89,16 @@ const login = async (email, password, purpose) => {
 
 const deleteAccount = async (userId) => {
   try {
-    return await User.findByIdAndDelete(userId);
+    const userData = await User.findById(userId);
+    if(userData){
+      userData.email = userData._id+userData.fullName;
+      userData.fullName = "Dialogi User"
+      userData.image = `/uploads/users/deletedAccount.png`
+      userData.isDeleted = true;
+      userData.save();
+    }
+    console.log(userData);
+    return
   }
   catch (error) {
     throw error;

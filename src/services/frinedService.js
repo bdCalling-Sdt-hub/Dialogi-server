@@ -15,7 +15,8 @@ const getFriendByParticipants = async (participants) => {
   const ndata = await Friend.findOne({
     participants: {
       $all: participants
-    }
+    },
+    status: 'accepted'
   });
   return ndata;
 }
@@ -171,10 +172,6 @@ const getGroupCreateFriendByParticipantId = async (filters, options) => {
     throw error;
   }
 };
-
-
-
-
 
 const deleteFriendByUserId = async (userId) => {
   return await Friend.deleteMany({ participants: { $in: [userId] } });

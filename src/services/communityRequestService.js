@@ -1,8 +1,10 @@
 const CommunityRequest = require('../models/CommunityRequest');
 
-const addMultipleCommunityRequest = async (data) => {
+const addNewCommunityRequest = async (communityRequestBody) => {
   try {
-    return await CommunityRequest.insertMany(data, { ordered: false });
+    const communityRequest = new CommunityRequest(communityRequestBody);
+    await communityRequest.save();
+    return communityRequest;
   } catch (error) {
     throw error;
   }
@@ -39,9 +41,18 @@ const getCommunityRequestById = async (id)=>{
   }
 }
 
+const deleteCommunityRequestByUser = async (userId) => {
+  try {
+    return await CommunityRequest.deleteMany({ sender: userId });
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
-  addMultipleCommunityRequest,
+  addNewCommunityRequest,
   deleteCommunityRequest,
   getCommunityRequest,
-  getCommunityRequestById
+  getCommunityRequestById,
+  deleteCommunityRequestByUser
 }

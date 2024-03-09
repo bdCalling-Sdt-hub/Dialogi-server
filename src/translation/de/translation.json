@@ -123,5 +123,6 @@
   "forbidden": "Sie sind nicht berechtigt, diese Aktion auszuführen",
   "chat-delete-failed": "Chat-Löschung fehlgeschlagen, bitte versuchen Sie es später erneut",
   "community-request":"Community-Anfrage erfolgreich abgerufen",
-  "chat-deleted": "Chat erfolgreich gelöscht"
+  "chat-deleted": "Chat erfolgreich gelöscht",
+  "account-deleted": "Konto ist nicht verfügbar"
 }

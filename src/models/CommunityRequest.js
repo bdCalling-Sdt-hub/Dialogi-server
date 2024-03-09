@@ -22,6 +22,11 @@ const communitySchema = mongoose.Schema(
       enum: ["group-admin", "user"],
       default: "user",
     },
+    sender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+    },
   },
   {
     timestamps: true,

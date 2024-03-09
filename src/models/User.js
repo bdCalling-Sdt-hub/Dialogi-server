@@ -6,19 +6,13 @@ const userSchema = new mongoose.Schema({
   fullName: { type: String, required: [true, 'Name must be given'], trim: true },
   email: {
     type: String,
-    required: [true, 'Email is required'],
-    trim: true,
-    unique: [true, 'Email should be unique'],
-    validate: {
-      validator: function (v) {
-        return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(v);
-      },
-      message: 'Please enter a valid Email'
-    }
+    required: false,
+    trim: true
   },
   password: { type: String, required: false, set: (v) => bcrypt.hashSync(v, bcrypt.genSaltSync(10)) },
   address: { type: String, required: false },
   dateOfBirth: { type: Date, required: false },
+  isDeleted: { type: Boolean, default: false },
   image: {
     type: String,
     default:"/uploads/users/user.png"
