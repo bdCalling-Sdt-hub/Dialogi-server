@@ -645,17 +645,15 @@ const deleteUserAccount = async (req, res) => {
       return res.status(400).json(response({ statusCode: '400', message: req.t('password-invalid'), status: "Error" }));
     }
     await deleteAccount(user._id);
-    const chatData = await deleteChatForDeletedUser(user._id);
-    const frinedData = await deleteFriendByUserId(user._id);
-    const messageData =  deleteMessageByUserId(user._id);
-    const paymentData = await deletePaymentInfoByUserId(user._id);
-    const comReq = await deleteCommunityRequestByUser(user._id);
+    await deleteChatForDeletedUser(user._id);
+    await deleteFriendByUserId(user._id);
+    await deleteMessageByUserId(user._id);
+    await deletePaymentInfoByUserId(user._id);
+    await deleteCommunityRequestByUser(user._id);
     
     //await deleteDiscussionByUserId(user._id);
     //await deleteDislikeByUserId(user._id);
     //await deleteLikeByUserId(user._id);
-
-    console.log(chatData, frinedData, paymentData, messageData, comReq)
 
     return res.status(200).json(response({ statusCode: '200', message: req.t('user-deleted'), status: "OK" }));
   }
