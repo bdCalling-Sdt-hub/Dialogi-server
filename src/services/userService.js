@@ -32,6 +32,7 @@ const getUserByEmail = async (email) => {
 const getAllUsers = async (filter, options) => {
   try {
     const { page = 1, limit = 10 } = options;
+    console.log(filter);
     const skip = (page - 1) * limit;
     const userList = await User.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
     const totalResults = await User.countDocuments(filter);
@@ -91,7 +92,7 @@ const deleteAccount = async (userId) => {
   try {
     const userData = await User.findById(userId);
     if(userData){
-      userData.email = userData._id+userData.fullName;
+      userData.email = userData.email+" (Account is deleted), Joining Time: "+userData.createdAt;
       userData.fullName = "Dialogi User"
       userData.image = `/uploads/users/deletedAccount.png`
       userData.isDeleted = true;

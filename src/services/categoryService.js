@@ -46,6 +46,7 @@ const getCategoryWithAccessStatus = async (filter, options) => {
       $project: {
         _id: 1,
         name: 1,
+        nameGr: 1,
         type: 1,
         isEarlyAccessAvailable: 1,
         image: 1,
@@ -87,6 +88,7 @@ const getCategoryWithAccessStatus = async (filter, options) => {
         $project: {
           _id: 1,
           name: 1,
+          nameGr: 1,
           type: 1,
           image: 1
         }
@@ -156,6 +158,7 @@ const getAllCategorys = async (filter, options) => {
       $project: {
         _id: 1,
         name: 1,
+        nameGr: 1,
         type: 1,
         isEarlyAccessAvailable: 1,
         image: 1,

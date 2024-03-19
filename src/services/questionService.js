@@ -42,8 +42,8 @@ const getAllSubCategories = async (filter, options) => {
     // Aggregate pipeline to get subcategories with count
     const aggregationPipeline = [
       { $match:  matchCriteria},
-      { $group: { _id: { subCategory: '$subCategory' }, count: { $sum: 1 } } },
-      { $project: { _id: 0, subCategory: '$_id.subCategory', count: 1 } }, // Project to reshape documents
+      { $group: { _id: { subCategory: '$subCategory', subCategoryGr: '$subCategoryGr' }, count: { $sum: 1 } } },
+      { $project: { _id: 0, subCategory: '$_id.subCategory', subCategoryGr: '$_id.subCategoryGr', count: 1 } }, // Project to reshape documents
       { $skip: skip },
       { $limit: limit }
     ];
@@ -255,14 +255,23 @@ const getAllQuestions = async (filter, options) => {
 const getSubCategoryBySubCatName = async (filters, options) => {
   const limit = Number(options.limit) || 10;
   try {
-    const subCategoryList = await Question.find(filters).limit(limit).select('subCategory');
-    return subCategoryList;
+    const subCategoryList = await Question.find(filters).limit(limit).select('subCategory subCategoryGr -_id');
+    // Extract subcategories from the questions
+    const subCategoryFinalList = subCategoryList.reduce((acc, question) => {
+      const { subCategory, subCategoryGr } = question;
+      // Check if the subcategory is already in the accumulator array
+      const existingSubCategory = acc.find(item => item.subCategory === subCategory);
+      if (!existingSubCategory) {
+        acc.push({ subCategory, subCategoryGr });
+      }
+      return acc;
+    }, []);
+    return subCategoryFinalList;
   } catch (error) {
     throw error;
   }
 
 }
-
 
 const updateQuestion = async (questionId, questionbody) => {
   try {
