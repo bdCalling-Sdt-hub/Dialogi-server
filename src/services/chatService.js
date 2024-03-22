@@ -7,8 +7,8 @@ const CommunityRequest = require('../models/CommunityRequest');
 const addChat = async (chatBody) => {
   try {
     const chat = new Chat(chatBody);
-    await chat.save();
-    return chat;
+    const newChat = await chat.save();
+    return newChat;
   } catch (error) {
     throw error;
   }

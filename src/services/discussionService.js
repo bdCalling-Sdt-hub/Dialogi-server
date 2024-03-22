@@ -38,7 +38,6 @@ const addReply = async (replyBody) => {
   }
 }
 
-
 const getDiscussionById = async (id) => {
   return await Discussion.findById(id);
 }
@@ -163,55 +162,6 @@ const getAllDiscussions = async (filter, options) => {
 
   return { discussionList: discussionListWithReplies, pagination };
 };
-
-// const getDiscussionWithReplies = async (discussionId, options) => {
-//   const page = Number(options.page) || 1;
-//   const limit = Number(options.limit) || 10;
-//   const skip = (page - 1) * limit;
-
-//   const discussion = await Discussion.findById(discussionId).select('discussion likes dislikes user createdAt').populate('user', 'fullName image');
-
-//   if (!discussion) {
-//     return null;
-//   }
-
-//   const replies = await Reply.find({ discussion: discussionId })
-//     .skip(skip)
-//     .limit(limit)
-//     .select('reply likes dislikes user')
-//     .populate('user', 'fullName image')
-
-//   const totalResults = await Reply.countDocuments({ discussion: discussionId });
-//   const totalPages = Math.ceil(totalResults / limit);
-//   const pagination = { totalResults, totalPages, currentPage: page, limit };
-
-//   // Create a structure similar to the provided example
-//   const formattedReplies = replies.map(reply => ({
-//     _id: reply._id,
-//     reply: reply.reply,
-//     user: {
-//       fullName: reply.user.fullName,
-//       image: reply.user.image,
-//       _id: reply.user._id
-//     },
-//     likes: reply.likes,
-//     dislikes: reply.dislikes,
-//     createdAt: reply.createdAt
-//   }));
-
-//   const formattedDiscussion = {
-//     _id: discussion._id,
-//     discussion: discussion.discussion,
-//     user: discussion.user,
-//     likes: discussion.likes,
-//     dislikes: discussion.dislikes,
-//     replies: formattedReplies,
-//     createdAt: discussion.createdAt
-//   };
-
-//   return { discussion: formattedDiscussion, pagination };
-// };
-
 
 const getDiscussionWithReplies = async (discussionId, userId, options) => {
   const page = Number(options.page) || 1;

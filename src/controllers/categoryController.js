@@ -29,9 +29,11 @@ const addNewCategory = async (req, res) => {
 
 const allCategories = async (req, res) => {
   try{
-    const { page, limit } = req.query;
+    const { page, limit, accessStatus } = req.query;
     const options = { page, limit };
-    const filter = {};
+    const filter = {
+      accessStatus: accessStatus
+    };
     const categorys = await getAllCategorys(filter, options);
     return res.status(200).json(response({ status: 'Success', statusCode: '200', message: req.t('categorys'), data: categorys }));
   }
