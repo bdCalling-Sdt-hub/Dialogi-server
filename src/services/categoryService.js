@@ -36,8 +36,19 @@ const getCategoryWithAccessStatus = async (filter, options) => {
     {
       $lookup: {
         from: 'questions',
-        localField: '_id',
-        foreignField: 'category',
+        let: { categoryId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$category', '$$categoryId'] },
+                  { $eq: ['$isEarlyAccessAvailable', false] }
+                ]
+              }
+            }
+          }
+        ],
         as: 'questions'
       }
     },
