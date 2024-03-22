@@ -111,8 +111,8 @@ const signUp = async (req, res) => {
       const sendNotification = await addNotification(notification);
       io.emit('dialogi-admin-notification', { status: 1008, message: sendNotification.message })
 
-      const accessToken = jwt.sign({userFullName: registeredUser.fullName, _id: registeredUser._id, email: registeredUser.email, role: registeredUser.role, subscription: registeredUser.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
-      const refreshToken = jwt.sign({userFullName: registeredUser.fullName, _id: registeredUser._id, email: registeredUser.email, role: registeredUser.role, subscription: registeredUser.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
+      const accessToken = jwt.sign({ userFullName: registeredUser.fullName, _id: registeredUser._id, email: registeredUser.email, role: registeredUser.role, subscription: registeredUser.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+      const refreshToken = jwt.sign({ userFullName: registeredUser.fullName, _id: registeredUser._id, email: registeredUser.email, role: registeredUser.role, subscription: registeredUser.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
 
       return res.status(201).json(response({ status: 'OK', statusCode: '201', type: 'user', message: req.t('user-verified'), data: registeredUser, accessToken: accessToken, refreshToken: refreshToken }));
     }
@@ -139,54 +139,54 @@ const signIn = async (req, res) => {
     const user = await login(email, password, 'signIn');
     if (user && !user?.isBlocked) {
       let activityId = null
-    if (user.role === 'admin') {
-      function extractDeviceModel(userAgent) {
-        const regex = /\(([^)]+)\)/;
-        const matches = userAgent.match(regex);
+      if (user.role === 'admin') {
+        function extractDeviceModel(userAgent) {
+          const regex = /\(([^)]+)\)/;
+          const matches = userAgent.match(regex);
 
-        if (matches && matches.length >= 2) {
-          return matches[1];
-        } else {
-          return 'Unknown';
+          if (matches && matches.length >= 2) {
+            return matches[1];
+          } else {
+            return 'Unknown';
+          }
         }
+
+        const userA = req.headers['user-agent'];
+
+        const deviceModel = extractDeviceModel(userA);
+
+
+        function getBrowserInfo(userAgent) {
+          const ua = userAgent.toLowerCase();
+
+          if (ua.includes('firefox')) {
+            return 'Firefox';
+          } else if (ua.includes('edg')) {
+            return 'Edge';
+          } else if (ua.includes('safari') && !ua.includes('chrome')) {
+            return 'Safari';
+          } else if (ua.includes('opr') || ua.includes('opera')) {
+            return 'Opera';
+          } else if (ua.includes('chrome')) {
+            return 'Chrome';
+          } else {
+            return 'Unknown';
+          }
+        }
+        // const deviceNameOrModel = req.headers['user-agent'];
+        const userAgent = req.get('user-agent');
+        const browser = getBrowserInfo(userAgent);
+        const activity = await Activity.create({
+          operatingSystem: deviceModel,
+          browser,
+          userId: user._id
+        });
+        activityId = activity._id
       }
 
-      const userA = req.headers['user-agent'];
 
-      const deviceModel = extractDeviceModel(userA);
-
-
-      function getBrowserInfo(userAgent) {
-        const ua = userAgent.toLowerCase();
-
-        if (ua.includes('firefox')) {
-          return 'Firefox';
-        } else if (ua.includes('edg')) {
-          return 'Edge';
-        } else if (ua.includes('safari') && !ua.includes('chrome')) {
-          return 'Safari';
-        } else if (ua.includes('opr') || ua.includes('opera')) {
-          return 'Opera';
-        } else if (ua.includes('chrome')) {
-          return 'Chrome';
-        } else {
-          return 'Unknown';
-        }
-      }
-      // const deviceNameOrModel = req.headers['user-agent'];
-      const userAgent = req.get('user-agent');
-      const browser = getBrowserInfo(userAgent);
-      const activity = await Activity.create({
-        operatingSystem: deviceModel,
-        browser,
-        userId: user._id
-      });
-      activityId = activity._id
-    }
-
-
-      const token = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription, activityId: activityId }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
-      const refreshToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
+      const token = jwt.sign({ userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription, activityId: activityId }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+      const refreshToken = jwt.sign({ userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_REFRESH_TOKEN, { expiresIn: '5y' });
       return res.status(200).json(response({ statusCode: '200', message: req.t('login-success'), status: "OK", type: "user", data: user, accessToken: token, refreshToken: refreshToken }));
     }
     return res.status(404).json(response({ statusCode: '400', message: req.t('login-failed'), status: "OK" }));
@@ -203,7 +203,7 @@ const signInWithRefreshToken = async (req, res) => {
     if (!user || (user && user.isBlocked)) {
       return res.status(404).json(response({ status: 'Error', statusCode: '404', type: 'user', message: req.t('user-not-exists') }));
     }
-    const accessToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+    const accessToken = jwt.sign({ userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
   } catch (error) {
     console.error(error);
@@ -225,7 +225,7 @@ const signInWithProvider = async (req, res) => {
       }
       user = await addUser(user);
     }
-    const accessToken = jwt.sign({userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
+    const accessToken = jwt.sign({ userFullName: user.fullName, _id: user._id, email: user.email, role: user.role, subscription: user.subscription }, process.env.JWT_ACCESS_TOKEN, { expiresIn: '1y' });
 
     return res.status(200).json(response({ status: 'OK', statusCode: '200', type: 'user', message: req.t('login-success'), data: user, accessToken: accessToken }));
   } catch (error) {
@@ -378,24 +378,23 @@ const addWorker = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    if (req.body.userRole !== 'admin') {
-      return res.status(401).json(response({ statusCode: '401', message: req.t('unauthorised'), status: "Error" }));
-    }
-
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const subscription = req.query.subscription;
     var filter = {
-      role: 'user'
+      role: 'user',
+      _id: { $ne: req.body.userId }
     };
     const search = req.query.search;
-    const searchRegExp = new RegExp('.*' + search + '.*', 'i');
     if (search) {
+      const searchRegExp = new RegExp('.*' + search + '.*', 'i');
       filter = {
         ...filter,
-        fullName: searchRegExp,
-        email: searchRegExp,
-        phoneNumber: searchRegExp
+        $or: [
+          { fullName: { $regex: searchRegExp } },
+          { email: { $regex: searchRegExp } },
+          { phoneNumber: { $regex: searchRegExp } }
+        ],
       }
     }
     if (subscription) {
@@ -469,7 +468,7 @@ const getProfileDetails = async (req, res) => {
     if (frinedStatus) {
       friendRequestStatus = frinedStatus.status;
     }
-    if(userDetails.isDeleted === true){
+    if (userDetails.isDeleted === true) {
       return res.status(410).json(response({ statusCode: '410', message: req.t('account-deleted'), status: "Account Deleted" }));
     }
     return res.status(200).json(response({ statusCode: '200', message: req.t('user-details'), data: { userDetails, friendRequestStatus }, status: "OK" }));
@@ -578,7 +577,7 @@ const updateProfile = async (req, res) => {
   catch (error) {
     console.error(error);
     logger.error(error, req.originalUrl)
-    if(req.file){
+    if (req.file) {
       unlinkImage(req.file.path)
     }
     return res.status(500).json(response({ statusCode: '500', message: req.t('server-error'), status: "Error" }));
@@ -645,17 +644,15 @@ const deleteUserAccount = async (req, res) => {
       return res.status(400).json(response({ statusCode: '400', message: req.t('password-invalid'), status: "Error" }));
     }
     await deleteAccount(user._id);
-    const chatData = await deleteChatForDeletedUser(user._id);
-    const frinedData = await deleteFriendByUserId(user._id);
-    const messageData =  deleteMessageByUserId(user._id);
-    const paymentData = await deletePaymentInfoByUserId(user._id);
-    const comReq = await deleteCommunityRequestByUser(user._id);
-    
+    await deleteChatForDeletedUser(user._id);
+    await deleteFriendByUserId(user._id);
+    await deleteMessageByUserId(user._id);
+    await deletePaymentInfoByUserId(user._id);
+    await deleteCommunityRequestByUser(user._id);
+
     //await deleteDiscussionByUserId(user._id);
     //await deleteDislikeByUserId(user._id);
     //await deleteLikeByUserId(user._id);
-
-    console.log(chatData, frinedData, paymentData, messageData, comReq)
 
     return res.status(200).json(response({ statusCode: '200', message: req.t('user-deleted'), status: "OK" }));
   }
@@ -745,7 +742,7 @@ const getPremiumPlusUsers = async (req, res) => {
       role: 'user',
       subscription: 'premium-plus',
       _id: { $ne: req.body.userId },
-      isBlocked: false
+      isDeleted: false
     };
     const options = { page, limit };
     const { userList, pagination } = await getAllUsers(filter, options);
@@ -759,4 +756,4 @@ const getPremiumPlusUsers = async (req, res) => {
   }
 }
 
-module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, addWorker, getWorkers, getUsers, userDetails, resetPassword, blockUser, unBlockUser, changePassword, signInWithRefreshToken, updateProfile, getBlockedUsers, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts, getPremiumPlusUsers }
+module.exports = { signUp, signIn, forgetPassword, verifyForgetPasswordOTP, getUsers, userDetails, resetPassword, blockUser, unBlockUser, changePassword, signInWithRefreshToken, updateProfile, getBlockedUsers, deleteUserByAdmin, getProfileDetails, deleteUserAccount, signInWithProvider, dashboardCounts, getPremiumPlusUsers }

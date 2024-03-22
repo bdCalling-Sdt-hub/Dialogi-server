@@ -36,8 +36,19 @@ const getCategoryWithAccessStatus = async (filter, options) => {
     {
       $lookup: {
         from: 'questions',
-        localField: '_id',
-        foreignField: 'category',
+        let: { categoryId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$category', '$$categoryId'] },
+                  { $eq: ['$isEarlyAccessAvailable', false] }
+                ]
+              }
+            }
+          }
+        ],
         as: 'questions'
       }
     },
@@ -46,6 +57,7 @@ const getCategoryWithAccessStatus = async (filter, options) => {
       $project: {
         _id: 1,
         name: 1,
+        nameGr: 1,
         type: 1,
         isEarlyAccessAvailable: 1,
         image: 1,
@@ -87,6 +99,7 @@ const getCategoryWithAccessStatus = async (filter, options) => {
         $project: {
           _id: 1,
           name: 1,
+          nameGr: 1,
           type: 1,
           image: 1
         }
@@ -137,6 +150,9 @@ const getAllCategorys = async (filter, options) => {
   const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
 
+  var isEarlyAccessAvailable = filter.accessStatus === 'true' ? true : false;
+
+  console.log(isEarlyAccessAvailable);
   const categoryList = await Category.aggregate([
     // Match all documents
     {
@@ -146,9 +162,20 @@ const getAllCategorys = async (filter, options) => {
     {
       $lookup: {
         from: 'questions',
-        localField: '_id',
-        foreignField: 'category',
-        as: 'questions'
+        let: { categoryId: '$_id', isEarlyAccessAvailableOrNot: isEarlyAccessAvailable },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$category', '$$categoryId'] },
+                  { $eq: ['$isEarlyAccessAvailable', '$$isEarlyAccessAvailableOrNot'] }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'allQuestions'
       }
     },
     // Project necessary fields
@@ -156,10 +183,11 @@ const getAllCategorys = async (filter, options) => {
       $project: {
         _id: 1,
         name: 1,
+        nameGr: 1,
         type: 1,
         isEarlyAccessAvailable: 1,
         image: 1,
-        questionCount: { $size: "$questions" }
+        questionCount: { $size: "$allQuestions" }
       }
     },
     // Skip and limit for pagination
